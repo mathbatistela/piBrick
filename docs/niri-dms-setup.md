@@ -176,3 +176,26 @@ the DMS purple theme, despite `matugenTemplateFoot: true` in DMS settings.
 If `~/dms` is ever updated (`git pull`) and this fix hasn't landed upstream yet, it'll need reapplying
 before rebuilding — check `git status` in `~/dms` for the modified `quickshell/matugen/templates/foot.ini`
 first.
+
+### DMS's layouts are built for wide desktop monitors, not this 1080×1240 screen
+
+DMS's grids and popups are sized/tested against typical landscape desktop aspect ratios. This device's
+3.92" AMOLED is 1080×1240 — nearly square, slightly *portrait* — and at least two DMS surfaces don't
+cope with that:
+
+- **App launcher / "App Drawer"** (opened by tapping the bar's launcher icon, or `Mod+Space`): in its
+  default `"full"` style, its bottom filter-tab bar (`All / Apps / Files / Plugins / ...`) renders
+  directly on top of the on-screen keyboard's key rows — overlapping, unreadable. **Fixed by settings
+  alone**: `launcherStyle` in `~/.config/DankMaterialShell/settings.json` is set to `"spotlight"`
+  (was `"full"`) — same setting exposed in DMS's own Settings UI (Settings → Launcher). This makes the
+  *same* launcher trigger (bar icon, `Mod+Space`) open the minimal Spotlight Search bar instead, which
+  has no bottom chrome and doesn't collide with the OSK. Verified via screenshots before/after. If
+  troubleshooting DMS settings later, don't "helpfully" flip this back to `"full"` without re-checking
+  this — it was a deliberate fix for this screen, not a default DMS ships with.
+- **Dashboard "Overview" tab** (opened by tapping the clock/weather area of the bar, or `dms ipc call
+  dash open overview`): its card grid overflows the 1080px width — the rightmost profile card's text
+  gets clipped (`mbatistela...`, `up 2h 13m...` cut off mid-word) — and the popout leaves a large unused
+  gap at the bottom rather than filling the 1240px height. **No settings-level fix found** (checked all
+  `compact`/`size`/`style`/`dash`-related keys in `settings.json` — nothing exposes this). Would need a
+  QML-level fix in DMS's Dashboard/Overview source, patched and rebuilt the same way as the foot
+  template fix above; not yet done.
