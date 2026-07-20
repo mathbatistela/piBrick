@@ -60,18 +60,76 @@ wired into any `Makefile` target — build manually with `dtc` if ever needed.
 
 The checkout on the device is **ahead of `origin/main`** with changes not yet upstreamed:
 
-- `button/pibrickbtn.c` (modified): adds `wait_second_press()` and the double-press branch in
-  `monitor_keydown()` for the user button (short/long/double distinct), **and** extends the exact same
-  short/long/double disambiguation to the power button, which previously fired one unconditional action
-  on any press. See `hardware/overview.md` for current behavior of both buttons.
+- `button/pibrickbtn.c` (modified): adds `wait_second_press()`/`wait_release_then_second_press()` and
+  the double-press branch in `monitor_keydown()` for the **user** button (short/long/double distinct).
+  The power button was also experimented on extensively (see below) but ended up **not** using timing
+  disambiguation — it calls one action (`power-short.sh`, now lock screen) on any press, unconditionally.
 - New, untracked: `button/deploy.sh`, `button/etc/pibrick/actions/keyboard-toggle.sh`,
   `button/etc/pibrick/user-double.sh` — the user-button double-press → squeekboard-toggle wiring.
-- New, untracked: `button/etc/pibrick/power-double.sh`, `button/etc/pibrick/power-long.sh`,
-  `button/etc/pibrick/actions/lock-screen.sh`, `button/etc/pibrick/actions/power-menu.sh` — the
-  power-button short/long/double wiring (lock screen / power options menu).
+- New, untracked: `button/etc/pibrick/actions/lock-screen.sh` — what the power button now calls
+  (`dms ipc call lock lock`), replacing the original `KEY_POWER`-injection version of `power-short.sh`.
+  `actions/power-menu.sh` (`dms ipc call powermenu open`) also exists, written during the investigation
+  below and left in place as a working, reusable script even though nothing currently calls it.
 
 Worth knowing if you're comparing this device's behavior against a fresh clone of the upstream repo, or
 if these changes are ever worth contributing back upstream.
+
+### Power-button short/long/double: attempted, investigated at length, abandoned
+
+Tried to give the power button the same short=lock / double or long=power-options behavior as a typical
+phone. Extended `monitor_keydown()`'s power branch with the same `wait_release`/`wait_second_press`
+disambiguation the user button already had. Result, in order of what was tried and ruled out via direct
+evidence (not guessing) each time:
+
+1. **Timeout too short?** Started at the user button's existing 350ms double-press window. Real button
+   presses (via `dms ipc call` / journal log tracing added directly into the running binary) showed the
+   short-press branch firing even for what should've been clean double-clicks. Widened to 500ms, then
+   800ms, then 900ms via a redesigned single-session capture (below) — **no improvement at any width**,
+   ruling out "just needs more time."
+2. **Race condition between two separate `gpiomon` subprocesses?** The original design called
+   `wait_release()` and `wait_second_press()` as two *separate* `gpiomon` invocations back to back —
+   a fast second press landing in the handover gap between one subprocess exiting and the next
+   acquiring the GPIO line would be silently missed regardless of timeout length. Redesigned into
+   `wait_release_then_second_press()`, one continuous `gpiomon --edges=both --num-events=2` session
+   with no gap at all. **Also no improvement** — ruled this out too.
+3. **`gpiosel_btn()` eating into the window before monitoring even starts?** Measured directly
+   (temporary timing instrumentation): ~1ms. Negligible, ruled out.
+4. **Direct raw GPIO event tracing** (`gpiomon` run standalone against `gpiochip0` line 23, `pibrick.service`
+   stopped to free the line) during a real, deliberate long-press (user held for 1-2s) showed a `rising`
+   (release) edge fire almost immediately — while the button was still physically held down. That's
+   **contact bounce being misread as a genuine release**, not a software timing bug at all.
+5. **Tried hardware debounce**: `gpiomon --debounce-period 15ms`. This made things *worse* — legitimate
+   presses stopped registering at all (zero events logged for a real, firm 1s+ hold). Reverted.
+6. **After reverting debounce**, behavior was still inconsistent run to run: a plain short press got
+   classified as a long press (no release detected in the window) on the very next attempt.
+
+Conclusion: this button's electrical contacts produce enough jitter/bounce that a fixed-timeout,
+edge-counting classification scheme in userspace isn't reliably tunable — confirmed via live GPIO
+tracing, not assumption. Reverted the power button to the simplest possible design: one unconditional
+action per press, no timing logic, no `wait_release_then_second_press()` call at all. This is the one
+behavior that worked reliably from the very first test. If double/long-press for the power button is
+worth revisiting later, the right next step is probably investigating the actual hardware (schematic,
+oscilloscope on the line, or a proper hardware debounce circuit) rather than more userspace timeout
+tuning — software already hit its limit here.
+
+**Confirmed hardware fact, learned by direct incident**: holding the power button long enough triggers
+an independent forced shutdown at the hardware/PMIC level (likely the bq25890 charger IC's own
+long-press cutoff) — completely bypassing `pibrickbtn`/Linux. This happened once during testing: the
+device powered off mid-session. Exact duration threshold unknown, only that it's real and shorter than
+"a few seconds."
+
+**That abrupt power-off also corrupted `/usr/local/bin/pibrickbtn`** — found truncated to 0 bytes after
+the reboot (`gcc` was almost certainly mid-write when power cut), causing
+`Failed to execute /usr/local/bin/pibrickbtn: Exec format error` and a boot loop
+(`pibrick.service: Start request repeated too quickly`). `build.sh`'s mtime-based rebuild check didn't
+catch this — the corrupt file still had its executable bit set, matching `build.sh`'s "already built"
+condition. **Recovery**: manually recompile and restart:
+```sh
+sudo gcc /usr/lib/pibrick/button/pibrickbtn.c -o /usr/local/bin/pibrickbtn
+sudo chmod +x /usr/local/bin/pibrickbtn
+sudo systemctl reset-failed pibrick.service
+sudo systemctl restart pibrick.service
+```
 
 **Maintenance trap hit while adding the power-button changes**: `pibrick.service`'s `build.sh` compiles
 `pibrickbtn` from `/usr/lib/pibrick/button/pibrickbtn.c` — **not** from this git checkout

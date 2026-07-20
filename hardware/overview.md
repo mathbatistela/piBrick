@@ -72,19 +72,21 @@ encoder covered below — these two are wired directly to the CM5 carrier board 
   `gpiomon --edges=falling`.
 - To disambiguate which button was pressed, it reads a second GPIO at press time, `gpiochip10` pin 20
   (`gpiosel_btn()`); that line's level selects power-vs-user.
-- **Power button**, disambiguated by the same timing windows as the user button (`wait_release` 700ms,
-  `wait_second_press` 350ms) — this used to be a single unconditional action on any press; extended to
-  match the user button's short/long/double pattern:
-  - short press → `actions/lock-screen.sh` (`dms ipc call lock lock`)
-  - double press → `actions/power-menu.sh` (`dms ipc call powermenu open` — Reboot/Log Out/Power
-    Off/Lock/Suspend/Restart DMS)
-  - long press (never released in time) → also `actions/power-menu.sh`, same as double press (a held
-    power button conventionally brings up shutdown options; avoids a silent no-op on a long hold)
-  - Both call `dms` via `runuser -u mbatistela -- env XDG_RUNTIME_DIR=/run/user/1000 dms ipc call ...`,
-    since `pibrickbtn` runs as root (refuses to run `dms` as root directly) and needs the desktop user's
-    session to reach DMS's IPC socket — same pattern `actions/keyboard-toggle.sh` already used for D-Bus.
-  - A genuine hardware long-press-forces-shutdown safety cutoff (independent of this Linux software,
-    likely in the bq25890 charger IC) may still exist underneath this — not verified either way.
+- **Power button** — deliberately **not** timing-disambiguated: any press (regardless of duration)
+  triggers `actions/lock-screen.sh` (`dms ipc call lock lock`). Calls `dms` via `runuser -u mbatistela --
+  env XDG_RUNTIME_DIR=/run/user/1000 dms ipc call ...`, since `pibrickbtn` runs as root (refuses to run
+  `dms` as root directly) and needs the desktop user's session to reach DMS's IPC socket — same pattern
+  `actions/keyboard-toggle.sh` already used for D-Bus.
+  - **Short/long/double disambiguation was attempted and abandoned** (see `docs/pibrick-driver.md` for
+    the full investigation): this button's physical contacts are noisy enough that a fixed-timeout
+    classification scheme proved unreliable in practice — direct GPIO event tracing showed genuine
+    presses misclassified in multiple different ways (short read as long, double undetected even at
+    900ms windows, and debounce filtering making it worse, not better). Kept simple and robust instead.
+  - **Confirmed hardware fact, learned the hard way**: holding the power button too long triggers an
+    independent PMIC-level (likely bq25890) forced shutdown that bypasses this Linux software entirely
+    — the device powered off mid-testing. That abrupt power loss also corrupted the compiled
+    `pibrickbtn` binary once (truncated to 0 bytes, `Exec format error` on next boot) — see the
+    recovery steps in `docs/pibrick-driver.md` if this happens again.
 - **User button**, disambiguated by timing windows (`wait_release` 700ms, `wait_second_press` 350ms):
   - short press → `actions/brightness.sh` (steps backlight ±64/1023, wraps)
   - long press (never released in time) → `actions/display-on-off.sh` (toggles `pibrick_display_enable`)
