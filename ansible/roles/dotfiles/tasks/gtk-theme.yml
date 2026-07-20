@@ -1,0 +1,54 @@
+---
+# Makes GTK3/GTK4 apps (galculator, file manager, text editor, ...) respect DMS's
+# Material You color theme. DMS's own matugen GTK templates only define Adwaita-style
+# semantic color variables (@window_bg_color, @accent_bg_color, ...) - they have no
+# visible effect unless the active GTK theme's stylesheet actually references those
+# variable names, which the stock Raspberry Pi OS theme (PiXtrix) doesn't. adw-gtk3
+# does, so this installs it and switches to it. Not packaged for Debian - installed
+# from the upstream GitHub release directly, matching how niri/quickshell/dms/etc.
+# are all handled outside apt on this device (see docs/niri-dms-setup.md).
+- name: Check if adw-gtk3-dark theme is already installed
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.themes/adw-gtk3-dark/gtk-3.0/gtk.css"
+  register: adw_gtk3_installed
+
+- name: Download and install adw-gtk3 theme
+  when: not adw_gtk3_installed.stat.exists
+  block:
+    - name: Download adw-gtk3 release tarball
+      ansible.builtin.get_url:
+        url: https://github.com/lassekongo83/adw-gtk3/releases/download/v6.5/adw-gtk3v6.5.tar.xz
+        dest: /tmp/adw-gtk3.tar.xz
+        mode: "0644"
+
+    - name: Ensure ~/.themes exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.themes"
+        state: directory
+        mode: "0755"
+
+    - name: Extract adw-gtk3 (light + dark variants)
+      ansible.builtin.unarchive:
+        src: /tmp/adw-gtk3.tar.xz
+        dest: "{{ ansible_env.HOME }}/.themes"
+        remote_src: true
+
+    - name: Clean up downloaded tarball
+      ansible.builtin.file:
+        path: /tmp/adw-gtk3.tar.xz
+        state: absent
+
+- name: Check current GTK theme
+  ansible.builtin.command: gsettings get org.gnome.desktop.interface gtk-theme
+  register: current_gtk_theme
+  changed_when: false
+
+- name: Set GTK theme to adw-gtk3-dark
+  ansible.builtin.command: gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark
+  changed_when: "'adw-gtk3-dark' not in current_gtk_theme.stdout"
+
+- name: Update xsettingsd's theme name (XWayland app fallback)
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.config/xsettingsd/xsettingsd.conf"
+    regexp: '^Net/ThemeName '
+    line: 'Net/ThemeName "adw-gtk3-dark"'

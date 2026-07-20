@@ -13,8 +13,8 @@ device itself).
 - `docs/agents/` — operating guide for an agent working on this device: access, safety rules, the
   Ansible workflow, screenshotting
 - `dotfiles/` — live-pulled OS/desktop config (niri, bash, wayvnc, foot, autostart)
-- `ansible/` — playbook + roles to apply `dotfiles/`, enable VNC, and install the desktop-stack apt
-  packages, idempotently
+- `ansible/` — playbook + roles to apply `dotfiles/`, enable VNC, install the desktop-stack apt
+  packages, and keep the GTK theme (adw-gtk3) matching DMS, idempotently
 - `dms-patches/` — backups of local bug fixes applied on top of the from-source `~/dms`
   (DankMaterialShell) checkout, versioned against the DMS commit they apply to, with a script to
   reapply them after any `~/dms` update

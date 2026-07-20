@@ -290,3 +290,38 @@ nothing now. The `squeekboard` apt package itself is left installed (just not au
 re-enabling both the keyboard and that button action is just `systemctl --user unmask
 app-squeekboard@autostart.service` and removing/emptying `~/.config/autostart/squeekboard.desktop`
 (delete the file from `dotfiles/` and re-run the playbook, or `rm` it directly on-device).
+
+### GTK apps (calculator, file manager, ...) now match the DMS theme
+
+GTK3/GTK4 apps (e.g. `galculator`) were rendering with the stock Raspberry Pi OS look — completely
+disconnected from DMS's purple Material You theme visible everywhere else. Root cause understood before
+changing anything, via `galculator` as the test case:
+
+- DMS's `matugen` GTK templates (`~/dms/quickshell/matugen/templates/gtk-colors.css`) only *define*
+  Adwaita-style semantic color variables (`@window_bg_color`, `@accent_bg_color`, etc.) via
+  `~/.config/gtk-3.0/gtk.css` / `~/.config/gtk-4.0/gtk.css`. That has zero visible effect unless the
+  *active* GTK theme's own stylesheet references those variable names — and this device's active theme,
+  `PiXtrix` (Raspberry Pi OS's own), doesn't. Confirmed empirically: enabling `gtkThemingEnabled` in
+  settings.json (was `false`) and regenerating only tinted the CSD title bar, nothing else.
+- `gtkThemingEnabled: false` → `true` is a real, intentional DMS setting (same toggle as Settings UI),
+  not a bug — it was just off. Toggling it alone requires a companion step DMS's own settings-UI handler
+  normally does automatically: running `~/dms/quickshell/scripts/gtk.sh` to symlink the generated colors
+  into `~/.config/{gtk-3.0,gtk-4.0}/gtk.css`. Editing `settings.json` directly (as this session did)
+  skips that side effect, so it was run manually once; it should now happen automatically through DMS's
+  normal apply path going forward.
+- To get real visual effect, switched the *active* GTK theme to **adw-gtk3** (specifically
+  `adw-gtk3-dark`), which does use those semantic variable names — this is the standard pairing DMS's
+  own `gtk.sh` comments assume (it links `adw-gtk3`-shaped asset paths for checkbox/radio glyphs). Not
+  packaged for Debian trixie (checked: not in apt, no flatpak available) — installed directly from the
+  upstream GitHub release (`lassekongo83/adw-gtk3`, pinned to `v6.5`) into `~/.themes/`, then
+  `gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark`. Also updated
+  `~/.config/xsettingsd/xsettingsd.conf`'s `Net/ThemeName` for XWayland-app consistency (`xsettingsd`
+  isn't currently running, so this is a no-op for now, but costs nothing to keep in sync).
+- **This changes the look of every GTK app system-wide**, not just the calculator — file manager, text
+  editor, etc. all now render Adwaita-style and pick up the purple theme, not just galculator.
+
+Automated and idempotent going forward via `ansible/roles/dotfiles/tasks/gtk-theme.yml` (installs
+adw-gtk3 if missing, sets the gsettings theme, updates xsettingsd) — verified with a real
+(non-`--check`) playbook run reporting no changes needed, matching the manual on-device state.
+`gtkThemingEnabled` in `settings.json` isn't itself vendored (per the usual rule — DMS-managed live
+file, not a dotfile), so it's recorded here: it needs to stay `true` for this to keep working.
