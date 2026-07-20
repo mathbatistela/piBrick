@@ -21,7 +21,10 @@ Via `ansible/` (see [`ansible-workflow.md`](ansible-workflow.md)):
 - **The desktop stack's own source** — `niri`, `quickshell`, `dms`, `matugen`, `dgop`, `dsearch` are
   built from source on the device (see `docs/niri-dms-setup.md`), each an upstream repo under `~/src/`
   and `~/dms` with its own git history. This repo captures their *config* as dotfiles, not their source
-  or build process.
+  or build process — **except** a small, explicit set of local bug fixes to `~/dms` itself, tracked in
+  [`../../dms-patches/`](../../dms-patches/) (full file backups + a script to reapply them after a
+  `~/dms` update). That's a deliberate, narrow exception, not a reversal of this rule — see that
+  directory's README before adding to it.
 
 ## Safety
 
@@ -37,6 +40,10 @@ disposable VM.
 - Applying the playbook for real (`ansible-playbook` without `--check`) — even though every role is
   designed to be idempotent and low-risk, changes to a device the user is actively using should be
   their call on timing
+- Running `dms-patches/apply.sh` when it's actually going to rebuild something (i.e. it detected a
+  change) — it restarts the `dms` user service, which visibly kicks the user out of whatever they're
+  doing in the desktop shell for a few seconds. Running it when it's a no-op (nothing to reapply) is
+  fine proactively; the "will it rebuild" check itself is just a read
 - Anything that reboots the device, edits `/boot/firmware/config.txt`, or touches the kernel
   driver/boot partition
 - Modifying `sudoers` or SSH auth config beyond what's already set up (see `access.md`)

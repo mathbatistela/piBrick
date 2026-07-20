@@ -10,6 +10,8 @@ folder is about *how to do things* to it.
 - [`ansible-workflow.md`](ansible-workflow.md) — running the playbook, dry-runs, dotfiles-are-source-
   of-truth, adding a new dotfile
 - [`screenshot.md`](screenshot.md) — grabbing a screenshot of whatever's on the device's screen
+- [`../../dms-patches/README.md`](../../dms-patches/README.md) — reapplying local DMS bug fixes after
+  a `~/dms` update (not agent-specific, but relevant if you're touching the desktop shell)
 
 The root `CLAUDE.md` is a short pointer into this folder — start there, it'll route you to the right
 file.

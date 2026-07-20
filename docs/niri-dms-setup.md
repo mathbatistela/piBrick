@@ -236,9 +236,14 @@ only **540×620**, not 1080×1240. At least two DMS surfaces didn't account for 
 Like the foot template fix, **these are local, uncommitted modifications** to the `~/dms` checkout
 (`git status` there shows `quickshell/matugen/templates/foot.ini`,
 `quickshell/Modules/DankDash/DankDashPopout.qml`, and `quickshell/Modules/AppDrawer/AppDrawerPopout.qml`
-all modified) — not yet upstreamed, and will need reapplying if `~/dms` is ever `git pull`ed before
-these land in DankMaterialShell itself. Given how many DMS surfaces had the exact same missing-clamp
-bug (three found just from investigating one user complaint), it's worth grepping for other hardcoded
+all modified) — not yet upstreamed. Given how many DMS surfaces had the exact same missing-clamp bug
+(three found just from investigating one user complaint), it's worth grepping for other hardcoded
 `popupWidth`/`popupHeight`/`modalWidth` assignments in `~/dms/quickshell` that don't go through
 `Math.min(..., screen.width - margin)` next time something looks like it's not fitting the screen —
 this is evidently a systemic gap, not a one-off.
+
+**These local modifications are backed up and reproducible** — see [`../dms-patches/`](../dms-patches/).
+Full copies of the three patched files live there, tagged against the DMS commit they were last applied
+to. `dms-patches/apply.sh`, run on the device, reapplies them over whatever's currently in `~/dms` and
+rebuilds/reinstalls if anything changed — so a `git pull` in `~/dms` no longer silently reverts these
+fixes back to the buggy upstream versions. Run it after every `~/dms` update.
