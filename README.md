@@ -8,6 +8,10 @@ device itself).
   touch, battery, buttons, keyboard/trackpad/scroll-wheel)
 - `docs/niri-dms-setup.md` — build log for the custom niri + DankMaterialShell desktop stack running
   on this device
+- `docs/pibrick-driver.md`, `docs/piBrick-hw-repo.md` — repo-structure references for the two upstream
+  hardware repos (kernel drivers; case/PCB design)
+- `docs/agents/` — operating guide for an agent working on this device: access, safety rules, the
+  Ansible workflow, screenshotting
 - `dotfiles/` — live-pulled OS/desktop config (niri, bash, wayvnc)
 - `ansible/` — playbook + roles to apply `dotfiles/`, enable VNC, and install the desktop-stack apt
   packages, idempotently

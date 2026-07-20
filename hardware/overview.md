@@ -20,11 +20,11 @@ the upstream docs alone.
 
 Three separate upstream repos, each owning a different layer:
 
-| Repo | Owns |
-|---|---|
-| [amarullz/piBrick](https://github.com/amarullz/piBrick) | Hardware design: PCB/schematic links, 3D case files, product docs |
-| [lshaf/pibrick-driver](https://github.com/lshaf/pibrick-driver) | Linux kernel drivers: display panel, touchscreen, battery charger, side buttons |
-| [amarullz/pibrick_pocketcm5_keyboard](https://github.com/amarullz/pibrick_pocketcm5_keyboard) | QMK/Vial firmware for the BBQ20 keyboard module (keys, trackpad, scroll wheel) |
+| Repo | Owns | Repo-structure reference |
+|---|---|---|
+| [amarullz/piBrick](https://github.com/amarullz/piBrick) | Hardware design: PCB/schematic links, 3D case files, product docs | [`docs/piBrick-hw-repo.md`](../docs/piBrick-hw-repo.md) |
+| [lshaf/pibrick-driver](https://github.com/lshaf/pibrick-driver) | Linux kernel drivers: display panel, touchscreen, battery charger, side buttons | [`docs/pibrick-driver.md`](../docs/pibrick-driver.md) |
+| [amarullz/pibrick_pocketcm5_keyboard](https://github.com/amarullz/pibrick_pocketcm5_keyboard) | QMK/Vial firmware for the BBQ20 keyboard module (keys, trackpad, scroll wheel) | — (see the "Keyboard module" section below) |
 
 On the device itself, both are checked out under `~/pi_brick/` (`piBrick/`, `pibrick-driver/`,
 `pibrick_pocketcm5_keyboard/`). This repo (`piBrick` admin repo) does **not** vendor or reimplement
