@@ -2,7 +2,7 @@
   "dms_repo": "https://github.com/AvengeMedia/DankMaterialShell.git",
   "last_applied_dms_commit": "d00368368940284c908db9a4821c34626551d2cc",
   "last_applied_dms_version": "v1.5.0+git4238",
-  "last_applied_date": "2026-07-19",
+  "last_applied_date": "2026-07-20",
   "files": [
     {
       "path": "quickshell/Modules/AppDrawer/AppDrawerPopout.qml",
@@ -19,6 +19,10 @@
     {
       "path": "quickshell/Modules/ProcessList/ProcessListPopout.qml",
       "description": "Clamp popupWidth/popupHeight to screen size. Was hardcoded to Theme.fontSizeMedium * 46/39 (~600-700px) with no clamp; overflowed the 540-logical-px screen, cutting off the Memory/PID columns and the bottom action bar. Same missing-clamp bug class as AppDrawerPopout and DankDashPopout above."
+    },
+    {
+      "path": "quickshell/Modules/DankBar/Widgets/WorkspaceSwitcher.qml",
+      "description": "Hard-cap the workspace switcher to 2 visible pills (centered on the active workspace), on top of the existing showOccupiedWorkspacesOnly setting. There's no upstream setting for a maximum pill count - occupied-only alone still grows unbounded as more workspaces get used, and this device's bar has no room to spare."
     }
   ]
 }
