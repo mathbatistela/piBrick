@@ -180,8 +180,9 @@ first.
 ### DMS's layouts are built for wide desktop monitors, not this 1080×1240 screen
 
 DMS's grids and popups are sized/tested against typical landscape desktop aspect ratios. This device's
-3.92" AMOLED is 1080×1240 — nearly square, slightly *portrait* — and at least two DMS surfaces don't
-cope with that:
+3.92" AMOLED is 1080×1240 physical pixels, run at niri output `scale 2` (see `dotfiles/niri/dms/outputs.kdl`)
+for usable touch-target sizes — which means the *logical* pixel size QML actually lays out against is
+only **540×620**, not 1080×1240. At least two DMS surfaces didn't account for that:
 
 - **App launcher / "App Drawer"** (opened by tapping the bar's launcher icon, or `Mod+Space`): in its
   default `"full"` style, its bottom filter-tab bar (`All / Apps / Files / Plugins / ...`) renders
@@ -193,9 +194,30 @@ cope with that:
   troubleshooting DMS settings later, don't "helpfully" flip this back to `"full"` without re-checking
   this — it was a deliberate fix for this screen, not a default DMS ships with.
 - **Dashboard "Overview" tab** (opened by tapping the clock/weather area of the bar, or `dms ipc call
-  dash open overview`): its card grid overflows the 1080px width — the rightmost profile card's text
-  gets clipped (`mbatistela...`, `up 2h 13m...` cut off mid-word) — and the popout leaves a large unused
-  gap at the bottom rather than filling the 1240px height. **No settings-level fix found** (checked all
-  `compact`/`size`/`style`/`dash`-related keys in `settings.json` — nothing exposes this). Would need a
-  QML-level fix in DMS's Dashboard/Overview source, patched and rebuilt the same way as the foot
-  template fix above; not yet done.
+  dash open overview`): `Modules/DankDash/DankDashPopout.qml` hardcoded `popupWidth: 700` (736 with week
+  numbers) with **no screen-size clamping at all** — 700 logical px against a 540-logical-px-wide
+  screen, so the popout rendered ~160px wider than the display and got clipped at the physical edge: the
+  rightmost profile card's text (`mbatistela...`, `up 2h 13m...`) cut off mid-word, and the "Media" card
+  entirely off-screen. No settings fix exists for this (checked every `compact`/`size`/`style`/`dash`
+  key in `settings.json`). **Fixed with a QML patch**, following the pattern already used by *every
+  other* popup/modal in this codebase (`GreeterModal`, `DankLauncherV2Modal*`, `NotificationModal`,
+  `SettingsModal`, ...) — all of them clamp with `Math.min(desiredSize, screen.width - margin)`;
+  `DankDashPopout.qml` was just missing it:
+  ```qml
+  // before
+  popupWidth: SettingsData.showWeekNumber ? 736 : 700
+  popupHeight: contentLoader.item ? contentLoader.item.implicitHeight : 500
+  // after
+  popupWidth: Math.min(SettingsData.showWeekNumber ? 736 : 700, screen ? screen.width - 80 : 700)
+  popupHeight: Math.min(contentLoader.item ? contentLoader.item.implicitHeight : 500, screen ? screen.height - 80 : 500)
+  ```
+  The inner `OverviewTab.qml` layout was already fraction-based (`parent.width * 0.2/0.3/0.5/...`), so
+  clamping the outer popup was enough — cards reflow to fit (e.g. the weather card's "Clear Sky" now
+  wraps to two lines instead of clipping) rather than needing a deeper rewrite. Verified with
+  screenshots before/after: full username/uptime text visible, previously off-screen "Media" card now
+  visible, popout properly inset within all four screen edges.
+
+Like the foot template fix, **this is a local, uncommitted modification** to the `~/dms` checkout
+(`git status` there shows both `quickshell/matugen/templates/foot.ini` and
+`quickshell/Modules/DankDash/DankDashPopout.qml` as modified) — not yet upstreamed, and will need
+reapplying if `~/dms` is ever `git pull`ed before this lands in DankMaterialShell itself.
