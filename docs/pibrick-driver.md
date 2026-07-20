@@ -61,13 +61,31 @@ wired into any `Makefile` target — build manually with `dtc` if ever needed.
 The checkout on the device is **ahead of `origin/main`** with changes not yet upstreamed:
 
 - `button/pibrickbtn.c` (modified): adds `wait_second_press()` and the double-press branch in
-  `monitor_keydown()` — this is what makes a double-press of the user button distinct from a long press.
+  `monitor_keydown()` for the user button (short/long/double distinct), **and** extends the exact same
+  short/long/double disambiguation to the power button, which previously fired one unconditional action
+  on any press. See `hardware/overview.md` for current behavior of both buttons.
 - New, untracked: `button/deploy.sh`, `button/etc/pibrick/actions/keyboard-toggle.sh`,
-  `button/etc/pibrick/user-double.sh` — the double-press → squeekboard-toggle wiring described in
-  `hardware/overview.md`.
+  `button/etc/pibrick/user-double.sh` — the user-button double-press → squeekboard-toggle wiring.
+- New, untracked: `button/etc/pibrick/power-double.sh`, `button/etc/pibrick/power-long.sh`,
+  `button/etc/pibrick/actions/lock-screen.sh`, `button/etc/pibrick/actions/power-menu.sh` — the
+  power-button short/long/double wiring (lock screen / power options menu).
 
 Worth knowing if you're comparing this device's behavior against a fresh clone of the upstream repo, or
 if these changes are ever worth contributing back upstream.
+
+**Maintenance trap hit while adding the power-button changes**: `pibrick.service`'s `build.sh` compiles
+`pibrickbtn` from `/usr/lib/pibrick/button/pibrickbtn.c` — **not** from this git checkout
+(`~/pi_brick/pibrick-driver/`) directly. `/usr/lib/pibrick/` is a one-time-copied install target
+(`install.sh`'s `cp -rf ./* /usr/lib/pibrick/`), never automatically re-synced from the checkout on
+every edit. Editing `pibrickbtn.c` (or any `button/etc/pibrick/*` action script) in the git checkout
+alone has **no effect** until it's also copied into `/usr/lib/pibrick/` — confirmed the hard way: the
+service restarted "successfully" and logged `No Linux Kernel Update` (build.sh's early-exit path) with
+no compile step at all, because the source it was comparing timestamps against was still the old
+version. Same applies to `/etc/pibrick/` (the actually-executed action scripts, staged once by
+`install.sh` from `button/etc/pibrick/`) — also not auto-synced from the checkout. After editing
+anything under `button/` in this checkout, both `/usr/lib/pibrick/button/` and, for action scripts,
+`/etc/pibrick/` need the same files copied over by hand before `systemctl restart pibrick.service` will
+actually pick up the change.
 
 ## Repo layout
 

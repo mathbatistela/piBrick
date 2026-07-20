@@ -72,9 +72,19 @@ encoder covered below — these two are wired directly to the CM5 carrier board 
   `gpiomon --edges=falling`.
 - To disambiguate which button was pressed, it reads a second GPIO at press time, `gpiochip10` pin 20
   (`gpiosel_btn()`); that line's level selects power-vs-user.
-- **Power button** short press → `power-short.sh` → injects `KEY_POWER` via `evemu-event` into a
-  `uinput` virtual device the binary creates at startup (brings up the desktop shutdown dialog). A long
-  press is *not* handled in software — held long enough, it's a hard power-off at the PMIC level.
+- **Power button**, disambiguated by the same timing windows as the user button (`wait_release` 700ms,
+  `wait_second_press` 350ms) — this used to be a single unconditional action on any press; extended to
+  match the user button's short/long/double pattern:
+  - short press → `actions/lock-screen.sh` (`dms ipc call lock lock`)
+  - double press → `actions/power-menu.sh` (`dms ipc call powermenu open` — Reboot/Log Out/Power
+    Off/Lock/Suspend/Restart DMS)
+  - long press (never released in time) → also `actions/power-menu.sh`, same as double press (a held
+    power button conventionally brings up shutdown options; avoids a silent no-op on a long hold)
+  - Both call `dms` via `runuser -u mbatistela -- env XDG_RUNTIME_DIR=/run/user/1000 dms ipc call ...`,
+    since `pibrickbtn` runs as root (refuses to run `dms` as root directly) and needs the desktop user's
+    session to reach DMS's IPC socket — same pattern `actions/keyboard-toggle.sh` already used for D-Bus.
+  - A genuine hardware long-press-forces-shutdown safety cutoff (independent of this Linux software,
+    likely in the bq25890 charger IC) may still exist underneath this — not verified either way.
 - **User button**, disambiguated by timing windows (`wait_release` 700ms, `wait_second_press` 350ms):
   - short press → `actions/brightness.sh` (steps backlight ±64/1023, wraps)
   - long press (never released in time) → `actions/display-on-off.sh` (toggles `pibrick_display_enable`)
