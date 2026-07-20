@@ -142,3 +142,37 @@ paths, but a real-session login is the next step to fully confirm.
   `dms.service` (`systemctl --user disable dms`), remove `/usr/local/bin/{niri,niri-session,quickshell,qs,dms,dgop,dsearch}`
   and `/usr/local/bin/matugen` / `~/.cargo/bin/matugen`. labwc/rpd-labwc remain the default and are
   unaffected either way.
+
+## Known issues & local fixes (addendum)
+
+### foot wasn't picking up DMS's Material You theme
+
+**Symptom**: `foot` (the terminal) rendered with plain default colors instead of matching the rest of
+the DMS purple theme, despite `matugenTemplateFoot: true` in DMS settings.
+
+**Root cause, two bugs stacked**:
+1. `~/.config/foot/foot.ini` didn't exist at all. DMS only ever writes the *colors fragment*
+   (`~/.config/foot/dank-colors.ini`) — same pattern as the niri `dms/*.kdl` fragments — and expects the
+   user's own `foot.ini` to `include=` it. Nothing did.
+2. DMS's `matugen` template for foot (`~/dms/quickshell/matugen/templates/foot.ini`) is actually invalid
+   for the installed foot version (1.21.0): it emits a `[colors-dark]` section header, but foot only
+   recognizes `[colors]`; it also places `cursor=` inside that section (belongs in its own `[cursor]`
+   section, as `color=<fg> <bg>`) and sets `dim-blend-towards=`, an option that doesn't exist in this
+   foot version at all. foot logs a config error for each and silently falls back to defaults — which is
+   why it looked completely untheme, not just slightly off.
+
+**Fix, verified end-to-end on-device (screenshots confirmed the theme actually renders)**:
+1. Created `~/.config/foot/foot.ini` with `include=~/.config/foot/dank-colors.ini` — now tracked as
+   `dotfiles/foot/foot.ini` in this repo and applied by the `dotfiles` Ansible role.
+2. Patched `~/dms/quickshell/matugen/templates/foot.ini` in the local DMS source checkout: renamed the
+   section to `[colors]`, moved the cursor color to a `[cursor]` section, dropped `dim-blend-towards`.
+   This is a **local, uncommitted modification** to the `~/dms` checkout (`origin` =
+   `AvengeMedia/DankMaterialShell` on GitHub) — worth reporting upstream, not yet done.
+3. Rebuilt and reinstalled: `cd ~/dms && make build && sudo make install-bin`, then
+   `systemctl --user restart dms`. Confirmed the freshly-built binary regenerates a valid
+   `dank-colors.ini` on its own (no more manual patching needed going forward, until/unless a `git pull`
+   in `~/dms` reintroduces the old template).
+
+If `~/dms` is ever updated (`git pull`) and this fix hasn't landed upstream yet, it'll need reapplying
+before rebuilding — check `git status` in `~/dms` for the modified `quickshell/matugen/templates/foot.ini`
+first.

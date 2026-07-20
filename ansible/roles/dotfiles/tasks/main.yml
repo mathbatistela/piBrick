@@ -22,6 +22,18 @@
   with_fileglob:
     - "{{ playbook_dir }}/../dotfiles/niri/dms/*.kdl"
 
+- name: Ensure foot config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/foot"
+    state: directory
+    mode: "0755"
+
+- name: Apply foot.ini (wires in DMS's generated color theme)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/foot/foot.ini"
+    dest: "{{ ansible_env.HOME }}/.config/foot/foot.ini"
+    mode: "0644"
+
 - name: Apply bashrc
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../dotfiles/bash/bashrc"
