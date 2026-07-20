@@ -138,7 +138,7 @@ layout {
     // preset-window-heights { }
 
     // You can change the default width of the new windows.
-    default-column-width { proportion 0.5; }
+    default-column-width { proportion 1.0; }
     // If you leave the brackets empty, the windows themselves will decide their initial width.
     // default-column-width {}
 
@@ -637,4 +637,12 @@ binds {
     // Powers off the monitors. To turn them back on, do any input like
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
+}
+
+// piBrick: this device has one small (540x620 logical) touchscreen output.
+// Never let a window's natural/requested size exceed it - some apps (e.g. lxtask)
+// request sizes well over 540 wide, overflowing past the visible screen edge.
+window-rule {
+    max-width 540
+    max-height 620
 }

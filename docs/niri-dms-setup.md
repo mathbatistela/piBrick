@@ -405,3 +405,42 @@ confirm a clean idle screenshot) before re-testing a popup fix — a leftover in
 test can make a working fix look broken.
 
 Four for four now on this bug class. Added to `dms-patches/` like the others.
+
+## Ordinary application windows overflowing the screen — a niri config issue, not DMS
+
+Different layer of the stack from everything above: this isn't a DMS popup, it's **regular app
+windows** (confirmed with `lxtask`, the GTK task manager) opening wider than the 540×620 logical
+screen. `niri msg windows` showed `lxtask` at `671 x 566` — 131 logical px wider than the display.
+Two separate niri-config-level findings, both in `dotfiles/niri/config.kdl` (the user config, copied
+from niri's own `default-config.kdl` originally — see "What's installed" above):
+
+- **`default-column-width { proportion 0.5; }`** (niri's stock default) meant any app that doesn't
+  request its own size opened at only *half* the already-small 540px-wide screen (~270px) — cramped for
+  almost everything. Changed to `proportion 1.0`. Verified with `galculator` (no hardcoded minimum
+  size): went from cramped-in-the-left-half to properly filling the screen width, buttons sized
+  comfortably for touch. This is the fix for "most apps look too small/cramped."
+- **Added a global `window-rule { max-width 540; max-height 620; }`** (no `match` — applies to every
+  window, confirmed from niri's own docs: an unmatched rule is the documented way to apply something
+  "for all windows"). This does help apps that don't have a hardcoded minimum wider than the screen.
+
+**`lxtask` itself is still 671px wide even with the `max-width` rule active, and that's not fixable
+from the niri config side.** Straight from niri's own docs (`Configuration:-Window-Rules.md`, "Size
+Overrides" section): *"the window itself always has a final say in its size. These \[min/max-width and
+-height] values instruct niri to never **ask** the window to be smaller than the minimum you set, or to
+be bigger than the maximum you set."* Verified this is really what's happening (not a config mistake) —
+reloaded the config (`niri msg action load-config-file`, confirmed via the niri log:
+`DEBUG niri_config: loaded config from ...`), relaunched `lxtask` fresh, and its tile size was still
+exactly `671 x 566`, unchanged. `lxtask`'s process table (Command/User/CPU%/GPU%/RSS/PID columns) has a
+genuine GTK-computed minimum width around 671px; niri asks it to be narrower, and the app declines.
+Forcing it smaller isn't possible without the compositor truncating the app's own content, which niri
+correctly refuses to do.
+
+**What this means in practice**: niri is a *scrollable*-tiling compositor — a too-wide window isn't
+lost, it's the rest of a horizontally-scrollable column (`Mod+Right` / two-finger horizontal swipe /
+scroll-wheel-right reveals the cut-off part). That's discoverable on a laptop trackpad, but not obvious
+on a touchscreen-first device like this one. For `lxtask` specifically, **`htop` in `foot`** is the
+better-suited alternative already on this device — it's a text UI that reflows to whatever width it's
+given, no fixed-column-width problem at all, and foot is already the properly-themed, lightweight
+terminal choice from earlier in this doc. Not fixed automatically since it's a per-app judgment call
+(replace `lxtask`, live with the scroll, or something else) rather than something with one clean
+answer.
