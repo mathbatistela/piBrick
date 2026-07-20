@@ -21,3 +21,16 @@
     mode: "0644"
   with_fileglob:
     - "{{ playbook_dir }}/../dotfiles/niri/dms/*.kdl"
+
+# niri+DMS is the device's default desktop; rpd-labwc stays installed as a selectable
+# fallback from the lightdm-gtk-greeter session dropdown.
+- name: Set niri as the lightdm autologin/default session
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/lightdm/lightdm.conf
+    regexp: "^{{ item }}="
+    line: "{{ item }}=niri"
+  loop:
+    - autologin-session
+    - user-session
+  notify: Restart lightdm

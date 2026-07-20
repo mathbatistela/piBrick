@@ -83,9 +83,12 @@ labwc desktop. Two things had to change to actually reach niri:
    active session. It opens the greeter on a fresh VT without killing the current session. Log in there
    and pick **Niri** from lightdm-gtk-greeter's session dropdown.
 
-Autologin itself (`autologin-user`/`autologin-session=rpd-labwc`) was left untouched, so a normal
-boot/reboot still lands in labwc by default. To make niri the permanent default instead, change
-`autologin-session=niri` in `/etc/lightdm/lightdm.conf` (not done — kept labwc as the safe fallback).
+**Update: niri is now the permanent default.** After confirming niri+DMS worked reliably through this
+whole doc's fixes (and comparing its idle resource footprint against stock labwc — roughly 452 MB vs.
+213 MB PSS, still a small fraction of the device's 8 GB), `autologin-session` and `user-session` in
+`/etc/lightdm/lightdm.conf` were switched from `rpd-labwc` to `niri`. A normal boot/reboot now lands
+directly in niri+DMS; `rpd-labwc` is still installed and selectable from the lightdm-gtk-greeter
+session dropdown (`dm-tool switch-to-greeter`) if ever needed as a fallback.
 
 ## Build gotchas hit along the way
 
@@ -126,9 +129,9 @@ winit backend, on a second Wayland socket) rather than through a full login swit
   expected/harmless warnings (sway/Hyprland IPC sockets unset — not applicable under niri; PowerProfiles
   D-Bus service not present — optional).
 
-**Not yet verified**: a real login through lightdm-gtk-greeter → Niri session, on the real DRM/KMS
-backend (not nested/winit) with a real display. The nested tests exercise the same rendering and IPC
-paths, but a real-session login is the next step to fully confirm.
+**Since verified**: a real login through lightdm → niri session, on the real DRM/KMS backend (not
+nested/winit), confirmed working — this is now the device's default boot session (see "Logging in"
+above).
 
 ## Maintenance
 
