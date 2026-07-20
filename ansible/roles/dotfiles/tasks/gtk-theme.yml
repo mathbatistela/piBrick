@@ -47,8 +47,28 @@
   ansible.builtin.command: gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark
   changed_when: "'adw-gtk3-dark' not in current_gtk_theme.stdout"
 
+# adw-gtk3's window-control buttons (minimize/maximize/close) need real SVG symbolic
+# icons to recolor correctly. The stock Raspberry Pi OS icon theme (PiXtrix) only ships
+# PNG rasters for these - GTK3's CSD button widget silently renders them blank instead
+# of falling back. The real "Adwaita" icon theme (proper SVGs) ships with GTK itself,
+# already installed, just not selected - no download needed here, unlike the GTK theme.
+- name: Check current icon theme
+  ansible.builtin.command: gsettings get org.gnome.desktop.interface icon-theme
+  register: current_icon_theme
+  changed_when: false
+
+- name: Set icon theme to Adwaita
+  ansible.builtin.command: gsettings set org.gnome.desktop.interface icon-theme Adwaita
+  changed_when: "'Adwaita' not in current_icon_theme.stdout"
+
 - name: Update xsettingsd's theme name (XWayland app fallback)
   ansible.builtin.lineinfile:
     path: "{{ ansible_env.HOME }}/.config/xsettingsd/xsettingsd.conf"
     regexp: '^Net/ThemeName '
     line: 'Net/ThemeName "adw-gtk3-dark"'
+
+- name: Update xsettingsd's icon theme name (XWayland app fallback)
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.config/xsettingsd/xsettingsd.conf"
+    regexp: '^Net/IconThemeName '
+    line: 'Net/IconThemeName "Adwaita"'

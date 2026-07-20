@@ -320,8 +320,45 @@ changing anything, via `galculator` as the test case:
 - **This changes the look of every GTK app system-wide**, not just the calculator — file manager, text
   editor, etc. all now render Adwaita-style and pick up the purple theme, not just galculator.
 
-Automated and idempotent going forward via `ansible/roles/dotfiles/tasks/gtk-theme.yml` (installs
-adw-gtk3 if missing, sets the gsettings theme, updates xsettingsd) — verified with a real
-(non-`--check`) playbook run reporting no changes needed, matching the manual on-device state.
-`gtkThemingEnabled` in `settings.json` isn't itself vendored (per the usual rule — DMS-managed live
-file, not a dotfile), so it's recorded here: it needs to stay `true` for this to keep working.
+**Follow-up: window-control buttons (minimize/maximize/close) rendered as blank circles.** After
+switching to `adw-gtk3`, galculator's CSD title bar picked up the right colors but its three window
+buttons had no icon glyphs at all — just flat circles. Cause: those buttons render via GTK3's icon-theme
+lookup (`window-close-symbolic` etc.), and the *icon* theme is a separate setting from the *widget*
+theme — still `PiXtrix` at this point. `PiXtrix`'s versions of these are `.symbolic.png` **raster**
+files (confirmed: `/usr/share/icons/PiXtrix/16x16/ui/window-close-symbolic.symbolic.png`), and GTK3's
+CSD button widget needs real SVG symbolic icons (with `currentColor` fills) to recolor against the
+titlebar background — it silently renders nothing rather than falling back to the raster version. Fix
+was simpler than the GTK theme itself: the real `Adwaita` icon theme (proper SVGs) ships with GTK/glib
+and was **already installed**, just not selected — `gsettings set org.gnome.desktop.interface icon-theme
+Adwaita`, no download needed. Verified with a screenshot: all three buttons (minimize dash, maximize
+square, close X) render correctly now.
+
+Both the GTK theme and icon theme changes are automated and idempotent going forward via
+`ansible/roles/dotfiles/tasks/gtk-theme.yml` (installs adw-gtk3 if missing, sets both gsettings values,
+updates xsettingsd for both) — verified with two full (non-`--check`) playbook runs, the second
+reporting zero changes. `gtkThemingEnabled` in `settings.json` isn't itself vendored (per the usual rule
+— DMS-managed live file, not a dotfile), so it's recorded here: it needs to stay `true` for this to keep
+working.
+
+### Why foot's window looks different from GTK apps' — it's not a bug, foot isn't a GTK app
+
+Side-by-side comparison after all the theming above: foot's title bar is a distinct solid lavender/
+purple bar with a maximize square + close X drawn directly on it (no minimize button — foot doesn't
+show one by default); galculator's (and other GTK apps') title bar is dark with three circular buttons
+matching the Adwaita/`adw-gtk3` style. These look and behave completely differently by design, not
+because one is broken:
+
+- **foot draws its own CSD from scratch** — it's a standalone C/Wayland client, not built on GTK at all.
+  Its decoration colors/behavior come entirely from `foot.ini`'s `[csd]` section (colors, button
+  visibility, sizes) and the `[colors]` section (see the foot theming fix earlier in this doc) — nothing
+  to do with GTK, `adw-gtk3`, or the icon theme. That's *why* none of the GTK-theming work above touched
+  it: there's no GTK involved to theme.
+- **galculator (and every other GTK3/GTK4 app)** uses GTK's own CSD, which *is* what all the work above
+  targeted — window theme (`adw-gtk3`) for the button chrome/colors, icon theme (`Adwaita`) for the
+  button glyphs.
+
+Both are correctly reflecting the same underlying purple palette (foot via its own `dank-colors.ini`,
+GTK apps via `adw-gtk3` + matugen's GTK color CSS) — they just each apply it through their own,
+unrelated theming mechanism. There's no single "make everything match" switch on this desktop stack;
+every toolkit (foot, GTK3/4, niri/DMS's own QML) is themed independently by matugen, and each needed its
+own fix this session (foot's template bug, GTK's inactive-theme gap, DMS's own popup-clamping bugs).
