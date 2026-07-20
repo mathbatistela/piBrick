@@ -177,6 +177,21 @@ If `~/dms` is ever updated (`git pull`) and this fix hasn't landed upstream yet,
 before rebuilding — check `git status` in `~/dms` for the modified `quickshell/matugen/templates/foot.ini`
 first.
 
+**Follow-up: title bar rendered as a pale/white bar, clashing with the dark theme.** The template still
+had no `[csd]` section at all (foot's client-side-decoration titlebar colors — separate from the main
+`[colors]` section). Per foot's docs, `csd.color` (the titlebar background) defaults to the *foreground*
+color when unset — and this theme's foreground is `e6e0e9`, a light near-white lavender, so the titlebar
+rendered as a pale bar sitting on top of an otherwise fully dark window. Added to the template:
+```qml
+[csd]
+color={{colors.background.default.hex_stripped}}
+button-color={{colors.on_surface.default.hex_stripped}}
+```
+Deliberately left `button-minimize-color`/`button-maximize-color`/`button-close-color` unset — they
+default to `regular4`/`regular2`/`regular1` respectively, which are already part of the theme's ANSI
+palette (fixed above), so they come out correctly tinted for free. Verified with a screenshot: titlebar
+now matches the dark background, text/button icons are readable, no more pale bar.
+
 ### DMS's layouts are built for wide desktop monitors, not this 1080×1240 screen
 
 DMS's grids and popups are sized/tested against typical landscape desktop aspect ratios. This device's

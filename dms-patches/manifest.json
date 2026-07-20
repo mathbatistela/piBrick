@@ -14,7 +14,7 @@
     },
     {
       "path": "quickshell/matugen/templates/foot.ini",
-      "description": "Fix invalid foot terminal color template: [colors-dark] section renamed to [colors] (foot only recognizes [colors]), cursor color moved to its own [cursor] section, dim-blend-towards option dropped (doesn't exist in foot 1.21.0)."
+      "description": "Fix invalid foot terminal color template: [colors-dark] section renamed to [colors] (foot only recognizes [colors]), cursor color moved to its own [cursor] section, dim-blend-towards option dropped (doesn't exist in foot 1.21.0). Also added a [csd] section (color/button-color) - the template never set this, so foot's titlebar defaulted to the light foreground color as its background, a pale/white bar clashing with the dark theme everywhere else."
     }
   ]
 }
