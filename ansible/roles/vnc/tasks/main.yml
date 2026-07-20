@@ -1,0 +1,9 @@
+---
+# Idempotent equivalent of `sudo raspi-config nonint do_vnc 0` + a manual enable/start,
+# both verified working manually on this device before being captured here.
+- name: Enable and start wayvnc
+  become: true
+  ansible.builtin.systemd:
+    name: wayvnc
+    enabled: true
+    state: started

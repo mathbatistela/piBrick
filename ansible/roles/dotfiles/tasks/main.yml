@@ -1,0 +1,37 @@
+---
+- name: Ensure niri config directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ ansible_env.HOME }}/.config/niri"
+    - "{{ ansible_env.HOME }}/.config/niri/dms"
+
+- name: Apply niri main config
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/niri/config.kdl"
+    dest: "{{ ansible_env.HOME }}/.config/niri/config.kdl"
+    mode: "0644"
+
+- name: Apply DankMaterialShell-generated niri config fragments
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ ansible_env.HOME }}/.config/niri/dms/{{ item | basename }}"
+    mode: "0644"
+  with_fileglob:
+    - "{{ playbook_dir }}/../dotfiles/niri/dms/*.kdl"
+
+- name: Apply bashrc
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/bash/bashrc"
+    dest: "{{ ansible_env.HOME }}/.bashrc"
+    mode: "0644"
+
+- name: Apply wayvnc config
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/wayvnc/config"
+    dest: /etc/wayvnc/config
+    mode: "0644"
+  notify: Restart wayvnc

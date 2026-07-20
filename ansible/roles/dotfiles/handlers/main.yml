@@ -1,0 +1,6 @@
+---
+- name: Restart wayvnc
+  become: true
+  ansible.builtin.systemd:
+    name: wayvnc
+    state: restarted

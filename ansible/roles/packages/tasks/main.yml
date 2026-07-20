@@ -1,0 +1,17 @@
+---
+# Desktop-stack apt packages. Kernel-driver build deps (build-essential, linux-headers,
+# device-tree-compiler, gpiod, evemu-tools, wlr-randr) are installed by pibrick-driver's own
+# install.sh and intentionally NOT duplicated here — see hardware/overview.md.
+- name: Install desktop-stack packages
+  become: true
+  ansible.builtin.apt:
+    name:
+      - foot
+      - fuzzel
+      - cava
+      - qt6ct
+      - squeekboard
+      - wayvnc
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
