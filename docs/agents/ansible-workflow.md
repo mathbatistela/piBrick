@@ -32,14 +32,23 @@ next run.
 
 ## Adding a new dotfile
 
+The `dotfiles` role is split one task file per application
+(`ansible/roles/dotfiles/tasks/{niri,foot,bash,wayvnc}.yml`), each included from `tasks/main.yml`. Keep
+it that way — don't add a new app's tasks inline into an existing file.
+
 1. Pull the live file from the device:
    ```sh
-   scp mbatistela@192.168.1.99:<path-on-device> dotfiles/<category>/<name>
+   scp mbatistela@192.168.1.99:<path-on-device> dotfiles/<app>/<name>
    ```
-2. Add a `ansible.builtin.copy` task for it in the relevant role under `ansible/roles/` (see
-   `ansible/roles/dotfiles/tasks/main.yml` for the pattern — `src` is relative to `playbook_dir`, `dest`
-   is the absolute path on the target). Add a `become: true` if the destination is outside the user's
-   home directory (e.g. `/etc/...`), like the `wayvnc` config task does.
+2. **New application**: create `ansible/roles/dotfiles/tasks/<app>.yml` with its own directory-creation
+   (if needed) and `ansible.builtin.copy` tasks — use `ansible/roles/dotfiles/tasks/foot.yml` as the
+   template (`src` relative to `playbook_dir`, `dest` the absolute path on the target). Then add one
+   `include_tasks: <app>.yml` line to `tasks/main.yml`.
+   **Existing application, another file**: just add another `copy` task to that app's existing
+   `tasks/<app>.yml`.
+   Add `become: true` on the task if the destination is outside the user's home directory (e.g.
+   `/etc/...`), like `wayvnc.yml` does; add a handler in `handlers/main.yml` + `notify:` if the app needs
+   restarting after its config changes, same pattern.
 3. Dry-run (`--check --diff`) to confirm the diff is empty (i.e. the file you copied out matches what
    gets copied back in) before committing.
 

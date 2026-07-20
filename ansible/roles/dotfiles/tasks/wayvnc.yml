@@ -1,0 +1,8 @@
+---
+- name: Apply wayvnc config
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/wayvnc/config"
+    dest: /etc/wayvnc/config
+    mode: "0644"
+  notify: Restart wayvnc

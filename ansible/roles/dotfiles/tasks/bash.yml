@@ -1,0 +1,6 @@
+---
+- name: Apply bashrc
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/bash/bashrc"
+    dest: "{{ ansible_env.HOME }}/.bashrc"
+    mode: "0644"
