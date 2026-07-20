@@ -510,3 +510,33 @@ ones — confirmed via niri's own window-rule docs, which document the same over
 own `binds { }` block, redefining just these two keys there is enough; the DMS-generated file is left
 untouched. Verified live: `niri msg action load-config-file` reported no errors, `niri validate`
 confirmed `config is valid`, and the user confirmed both directions work correctly on-device.
+
+## Workspace switcher pill count — a fifth instance of "not enough screen for DMS's assumptions"
+
+Same root cause as the popup-clamping bugs above (DMS sized for wide desktop monitors), different
+surface: the bar's workspace-switcher widget (`Modules/DankBar/Widgets/WorkspaceSwitcher.qml`) has no
+concept of a maximum pill count. By default it renders one pill per niri workspace, including the
+always-present empty "next" workspace niri keeps at the end of the list for scrolling into — three
+pills on a bar with no room for even two, on a screen this narrow.
+
+Two layers to the fix, since one alone wasn't enough:
+
+- **Settings-only, no QML**: `showOccupiedWorkspacesOnly: true` in `settings.json` (same setting
+  exposed in DMS's own Settings UI → Workspaces tab). Hides workspaces with zero windows on them —
+  removes niri's perpetual empty trailing workspace from the bar. This alone dropped the pill count
+  from 3 to 2 at the time, but it's occupancy-based, not a hard cap: as soon as a third *real*
+  workspace gets used, its pill reappears and the count grows again. Confirmed this the hard way —
+  after using the device normally for a bit, a third workspace picked up a window and the bar was back
+  to 3 pills, which read as "the fix isn't working" until `niri msg workspaces`/`windows` showed all
+  three were genuinely occupied.
+- **QML patch for the actual hard cap**: no `settings.json` key exists for "max visible workspace
+  pills" — checked every `workspace*` key. Added `capWorkspacesToVisible()` to
+  `WorkspaceSwitcher.qml`'s niri code path (`getNiriWorkspaces()`), applied after the
+  `showOccupiedWorkspacesOnly` filter: caps the list to 2 entries, using a sliding window centered on
+  whichever workspace is currently active (so the active pill never gets scrolled out of what's
+  visible). Same "local QML patch, no upstream setting available" shape as the popup-clamping fixes
+  above — added to `dms-patches/` alongside them, applied via `dms-patches/apply.sh` (QML-only change
+  here, so `make build` was a quick `go build` of the `dms` Go binary that embeds the QML, no
+  native/C++ rebuild). Verified via screenshots before (3 pills, one truly empty and two occupied,
+  later three occupied) and after (2 pills, holding steady regardless of how many workspaces are
+  actually in use).
