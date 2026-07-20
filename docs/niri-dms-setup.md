@@ -247,3 +247,33 @@ Full copies of the three patched files live there, tagged against the DMS commit
 to. `dms-patches/apply.sh`, run on the device, reapplies them over whatever's currently in `~/dms` and
 rebuilds/reinstalls if anything changed — so a `git pull` in `~/dms` no longer silently reverts these
 fixes back to the buggy upstream versions. Run it after every `~/dms` update.
+
+### Bar sizing/composition — settings tweaks, and one unresolved bug
+
+Follow-up after the launcher/dashboard fixes above: the top bar itself was still cramped-looking on
+this screen. Two settings-only changes in `~/.config/DankMaterialShell/settings.json`'s `barConfigs[0]`
+(same file DMS's own Settings UI writes to — no QML involved):
+
+- `iconScale` and `fontScale`: `1` → `1.15`, `innerPadding`: `4` → `6` — modestly increases the bar's
+  own thickness (derived from `innerPadding` via `Theme.snap(Math.max(widgetThickness + innerPadding +
+  4, Theme.barHeight - 4 - (8 - innerPadding)), dpr)` in `Common/Theme.qml`) and, through it, every
+  icon/text size on the bar (`Theme.barIconSize`/`barTextSize` both scale off `barThickness`). No
+  overflow risk from this change — everything here is proportional/relative, unlike the earlier
+  hardcoded-pixel popup bugs.
+- `leftWidgets`: removed `"focusedWindow"` (the currently-focused-window title/icon indicator) —
+  `["launcherButton", "workspaceSwitcher", "focusedWindow"]` → `["launcherButton", "workspaceSwitcher"]`.
+
+**Unresolved: `cpuUsage`/`memUsage` bar widgets don't render despite being fully "active".** These were
+already present in `barConfigs[0].rightWidgets` (unclear when/how they were added — not something this
+session configured). Investigated at length via temporary QML debug logging (since removed, not part of
+the real fixes): confirmed `dgop` is installed and detected (`dms doctor` shows it available), confirmed
+`DgopService.dgopAvailable` correctly becomes `true` shortly after DMS starts, confirmed the widgets'
+`active` binding correctly reacts and flips to `true`, and confirmed (via `mapToItem`) they get assigned
+real on-screen geometry within the visible 540×620 logical area (e.g. `x=243.5, w=65` for `cpuUsage`) —
+yet nothing ever appears there in a screenshot, immediately or after a full second of settling, no
+flicker. No QML errors/exceptions in the logs. Did not find the root cause — this looks like it goes
+deeper than the popup-clamping bug class above (config/state is provably correct; the disconnect is
+somewhere in actual rendering/compositing that wasn't identified). Left `rightWidgets` untouched rather
+than remove them, since they're otherwise harmless (invisible, though `DgopService.addRef(["cpu"|"memory"])`
+does mean a small idle polling cost even while invisible). Worth another look with proper Quickshell
+inspector tooling rather than blind `console.warn` debugging if this matters enough to chase further.
