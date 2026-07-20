@@ -263,17 +263,30 @@ this screen. Two settings-only changes in `~/.config/DankMaterialShell/settings.
 - `leftWidgets`: removed `"focusedWindow"` (the currently-focused-window title/icon indicator) —
   `["launcherButton", "workspaceSwitcher", "focusedWindow"]` → `["launcherButton", "workspaceSwitcher"]`.
 
-**Unresolved: `cpuUsage`/`memUsage` bar widgets don't render despite being fully "active".** These were
-already present in `barConfigs[0].rightWidgets` (unclear when/how they were added — not something this
-session configured). Investigated at length via temporary QML debug logging (since removed, not part of
-the real fixes): confirmed `dgop` is installed and detected (`dms doctor` shows it available), confirmed
-`DgopService.dgopAvailable` correctly becomes `true` shortly after DMS starts, confirmed the widgets'
-`active` binding correctly reacts and flips to `true`, and confirmed (via `mapToItem`) they get assigned
-real on-screen geometry within the visible 540×620 logical area (e.g. `x=243.5, w=65` for `cpuUsage`) —
-yet nothing ever appears there in a screenshot, immediately or after a full second of settling, no
-flicker. No QML errors/exceptions in the logs. Did not find the root cause — this looks like it goes
-deeper than the popup-clamping bug class above (config/state is provably correct; the disconnect is
-somewhere in actual rendering/compositing that wasn't identified). Left `rightWidgets` untouched rather
-than remove them, since they're otherwise harmless (invisible, though `DgopService.addRef(["cpu"|"memory"])`
-does mean a small idle polling cost even while invisible). Worth another look with proper Quickshell
-inspector tooling rather than blind `console.warn` debugging if this matters enough to chase further.
+**Update: `cpuUsage`/`memUsage` bar widgets resolved on their own.** At the time of the changes above,
+these widgets were confirmed "active" with valid on-screen geometry (via temporary debug logging, since
+removed) but never actually rendered anything — documented as an unresolved rendering bug. After the
+`iconScale`/`fontScale`/`innerPadding`/`leftWidgets` settings changes and the DMS restart that followed,
+they started rendering correctly and have stayed visible since (CPU % and mem % icons, both in the right
+widget group). Whatever was wrong was evidently tied to stale in-process state from the many rebuild/
+restart cycles during that debugging session, not a persistent bug — a plain `systemctl --user restart
+dms` on a normal (non-freshly-rebuilt) run seems to have been enough to clear it. Noting this in case it
+recurs: if these widgets ever go invisible again, try a plain restart before assuming it's the same deep
+bug described above.
+
+### On-screen keyboard (squeekboard) disabled
+
+`squeekboard` autostarted via a systemd-generated unit (`app-squeekboard@autostart.service`, generated
+by systemd's xdg-autostart-generator from `/etc/xdg/autostart/squeekboard.desktop`) and popped up
+automatically on any focused text field — not wanted given the physical BBQ20 keyboard. Disabled the
+standard XDG way, no system files touched: `dotfiles/autostart/squeekboard.desktop` is a per-user
+override of the system entry with `Hidden=true` added, applied by the `dotfiles` Ansible role's
+`autostart.yml`, which also masks the generated systemd unit
+(`systemctl --user mask app-squeekboard@autostart.service`) so it can't be started again even manually.
+**Side effect**: the side-button double-press action (`keyboard-toggle.sh`, see `hardware/overview.md`)
+toggles squeekboard over D-Bus (`sm.puri.OSK0`) — with squeekboard no longer running, that D-Bus name no
+longer exists, so double-pressing the user button to toggle the on-screen keyboard silently does
+nothing now. The `squeekboard` apt package itself is left installed (just not autostarted), so
+re-enabling both the keyboard and that button action is just `systemctl --user unmask
+app-squeekboard@autostart.service` and removing/emptying `~/.config/autostart/squeekboard.desktop`
+(delete the file from `dotfiles/` and re-run the playbook, or `rm` it directly on-device).

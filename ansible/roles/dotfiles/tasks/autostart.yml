@@ -1,0 +1,19 @@
+---
+- name: Ensure autostart config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/autostart"
+    state: directory
+    mode: "0755"
+
+- name: Disable squeekboard on-screen-keyboard autostart
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/autostart/squeekboard.desktop"
+    dest: "{{ ansible_env.HOME }}/.config/autostart/squeekboard.desktop"
+    mode: "0644"
+
+- name: Mask the generated squeekboard systemd unit
+  ansible.builtin.systemd:
+    name: app-squeekboard@autostart.service
+    scope: user
+    state: stopped
+    masked: true

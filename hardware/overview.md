@@ -79,7 +79,9 @@ encoder covered below — these two are wired directly to the CM5 carrier board 
   - short press → `actions/brightness.sh` (steps backlight ±64/1023, wraps)
   - long press (never released in time) → `actions/display-on-off.sh` (toggles `pibrick_display_enable`)
   - double press → `actions/keyboard-toggle.sh` (toggles the **squeekboard** on-screen keyboard over
-    D-Bus — a software keyboard, unrelated to the physical BBQ20 one)
+    D-Bus — a software keyboard, unrelated to the physical BBQ20 one. **Currently a no-op**: squeekboard's
+    autostart is disabled on this device, see `docs/niri-dms-setup.md`, so its D-Bus name doesn't exist
+    and this action silently does nothing)
 - At startup it does `rmmod gpio_keys; rmmod hyn_ts; modprobe hyn_ts` — unloading the generic kernel
   `gpio_keys` driver so it doesn't race with the userspace poller for the same GPIO lines.
 - Live customizable copies of the action scripts run from `/etc/pibrick/` (installed there by

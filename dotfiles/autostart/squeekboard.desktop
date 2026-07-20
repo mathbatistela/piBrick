@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Squeekboard
+Comment=Launch the on-screen keyboard
+Exec=/usr/bin/sbtest
+Terminal=false
+Type=Application
+NoDisplay=true
+Hidden=true

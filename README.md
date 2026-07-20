@@ -12,7 +12,7 @@ device itself).
   hardware repos (kernel drivers; case/PCB design)
 - `docs/agents/` — operating guide for an agent working on this device: access, safety rules, the
   Ansible workflow, screenshotting
-- `dotfiles/` — live-pulled OS/desktop config (niri, bash, wayvnc, foot)
+- `dotfiles/` — live-pulled OS/desktop config (niri, bash, wayvnc, foot, autostart)
 - `ansible/` — playbook + roles to apply `dotfiles/`, enable VNC, and install the desktop-stack apt
   packages, idempotently
 - `dms-patches/` — backups of local bug fixes applied on top of the from-source `~/dms`

@@ -13,3 +13,6 @@
 
 - name: Apply wayvnc dotfiles
   ansible.builtin.include_tasks: wayvnc.yml
+
+- name: Apply autostart dotfiles
+  ansible.builtin.include_tasks: autostart.yml
