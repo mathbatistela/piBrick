@@ -184,15 +184,31 @@ DMS's grids and popups are sized/tested against typical landscape desktop aspect
 for usable touch-target sizes — which means the *logical* pixel size QML actually lays out against is
 only **540×620**, not 1080×1240. At least two DMS surfaces didn't account for that:
 
-- **App launcher / "App Drawer"** (opened by tapping the bar's launcher icon, or `Mod+Space`): in its
-  default `"full"` style, its bottom filter-tab bar (`All / Apps / Files / Plugins / ...`) renders
-  directly on top of the on-screen keyboard's key rows — overlapping, unreadable. **Fixed by settings
-  alone**: `launcherStyle` in `~/.config/DankMaterialShell/settings.json` is set to `"spotlight"`
-  (was `"full"`) — same setting exposed in DMS's own Settings UI (Settings → Launcher). This makes the
-  *same* launcher trigger (bar icon, `Mod+Space`) open the minimal Spotlight Search bar instead, which
-  has no bottom chrome and doesn't collide with the OSK. Verified via screenshots before/after. If
-  troubleshooting DMS settings later, don't "helpfully" flip this back to `"full"` without re-checking
-  this — it was a deliberate fix for this screen, not a default DMS ships with.
+- **App launcher — two different components behind what looks like one feature.** `Mod+Space` and
+  *tapping the bar's launcher icon* do **not** open the same QML component — worth knowing before
+  debugging either one:
+  - `Mod+Space` (niri keybind → `dms ipc call spotlight toggle`) and the `launcher`/`spotlight` IPC
+    targets all resolve to `Modals/DankLauncherV2/DankLauncherV2Modal.qml`, which picks one of three
+    backend implementations based on `launcherStyle`. In its default `"full"` style, its bottom
+    filter-tab bar (`All / Apps / Files / Plugins / ...`) rendered directly on top of the on-screen
+    keyboard's key rows — overlapping, unreadable. **Fixed by settings alone**: `launcherStyle` in
+    `~/.config/DankMaterialShell/settings.json` is set to `"spotlight"` (was `"full"`) — same setting
+    exposed in DMS's own Settings UI (Settings → Launcher). This resolves the modal to
+    `DankLauncherV2ModalSpotlight.qml` instead, which doesn't have that colliding bottom bar. Verified
+    via screenshots before/after. If troubleshooting DMS settings later, don't "helpfully" flip this
+    back to `"full"` without re-checking this — it was a deliberate fix for this screen.
+  - **Tapping the bar's launcher icon** (top-left grid icon) instead calls
+    `LauncherButton.onClicked` → `PopoutService.appDrawerLoader`, which opens
+    `Modules/AppDrawer/AppDrawerPopout.qml` — a **third, separate** component, unaffected by
+    `launcherStyle`. It never had the OSK-collision bug (no bottom tab bar in its layout at all), but
+    it had the *same class of bug* as the dashboard below: `popupWidth: 560` / `popupHeight: 640`
+    hardcoded with no screen clamping, against this device's 540-logical-px-wide screen — a small
+    (~20 logical px / ~40 physical px) but real overflow that sliced the rightmost view-mode toggle
+    icon (of three: list / grid / dense-grid) clean in half at the screen edge. **Fixed with a QML
+    patch**, same `Math.min(desired, screen.width - margin)` pattern as everywhere else in the
+    codebase. Verified via IPC (`dms ipc call widget toggle launcherButton` — there's no direct IPC
+    target for this specific popout, `widget toggle <id>` calling the bar widget's own click handler is
+    the way to trigger/screenshot it non-interactively) plus a screenshot from an actual on-device tap.
 - **Dashboard "Overview" tab** (opened by tapping the clock/weather area of the bar, or `dms ipc call
   dash open overview`): `Modules/DankDash/DankDashPopout.qml` hardcoded `popupWidth: 700` (736 with week
   numbers) with **no screen-size clamping at all** — 700 logical px against a 540-logical-px-wide
@@ -217,7 +233,12 @@ only **540×620**, not 1080×1240. At least two DMS surfaces didn't account for 
   screenshots before/after: full username/uptime text visible, previously off-screen "Media" card now
   visible, popout properly inset within all four screen edges.
 
-Like the foot template fix, **this is a local, uncommitted modification** to the `~/dms` checkout
-(`git status` there shows both `quickshell/matugen/templates/foot.ini` and
-`quickshell/Modules/DankDash/DankDashPopout.qml` as modified) — not yet upstreamed, and will need
-reapplying if `~/dms` is ever `git pull`ed before this lands in DankMaterialShell itself.
+Like the foot template fix, **these are local, uncommitted modifications** to the `~/dms` checkout
+(`git status` there shows `quickshell/matugen/templates/foot.ini`,
+`quickshell/Modules/DankDash/DankDashPopout.qml`, and `quickshell/Modules/AppDrawer/AppDrawerPopout.qml`
+all modified) — not yet upstreamed, and will need reapplying if `~/dms` is ever `git pull`ed before
+these land in DankMaterialShell itself. Given how many DMS surfaces had the exact same missing-clamp
+bug (three found just from investigating one user complaint), it's worth grepping for other hardcoded
+`popupWidth`/`popupHeight`/`modalWidth` assignments in `~/dms/quickshell` that don't go through
+`Math.min(..., screen.width - margin)` next time something looks like it's not fitting the screen —
+this is evidently a systemic gap, not a one-off.
