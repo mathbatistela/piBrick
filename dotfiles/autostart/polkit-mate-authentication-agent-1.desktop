@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=PolicyKit Authentication Agent
+Exec=/usr/libexec/polkit-mate-authentication-agent-1
+Type=Application
+NoDisplay=true
+Hidden=true

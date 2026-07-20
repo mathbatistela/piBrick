@@ -83,12 +83,54 @@ labwc desktop. Two things had to change to actually reach niri:
    active session. It opens the greeter on a fresh VT without killing the current session. Log in there
    and pick **Niri** from lightdm-gtk-greeter's session dropdown.
 
-**Update: niri is now the permanent default.** After confirming niri+DMS worked reliably through this
-whole doc's fixes (and comparing its idle resource footprint against stock labwc — roughly 452 MB vs.
-213 MB PSS, still a small fraction of the device's 8 GB), `autologin-session` and `user-session` in
-`/etc/lightdm/lightdm.conf` were switched from `rpd-labwc` to `niri`. A normal boot/reboot now lands
-directly in niri+DMS; `rpd-labwc` is still installed and selectable from the lightdm-gtk-greeter
-session dropdown (`dm-tool switch-to-greeter`) if ever needed as a fallback.
+**Update: niri became the permanent default, then lightdm was replaced entirely.** After confirming
+niri+DMS worked reliably through this whole doc's fixes (and comparing its idle resource footprint
+against stock labwc — roughly 452 MB vs. 213 MB PSS, still a small fraction of the device's 8 GB),
+`autologin-session`/`user-session` in `/etc/lightdm/lightdm.conf` were first switched from `rpd-labwc`
+to `niri`. That surfaced two more issues, both since fixed:
+
+- **A duplicate PolicyKit agent.** Booting into niri (unlike `rpd-labwc`) started *both*
+  `lxpolkit` and `polkit-mate-authentication-agent-1` — `/etc/xdg/autostart/lxpolkit.desktop` excludes
+  itself under `rpd-labwc` (`NotShowIn=...;rpd-wayland;`) but has no `niri` exclusion, and
+  `polkit-mate-authentication-agent-1.desktop` has no exclusion for either. Two agents racing to
+  register for the same session throws `GDBus.Error:...PolicyKit1.Error.Failed: An authentication agent
+  already exists for the given subject` as a visible error dialog on boot. Fixed the same way squeekboard
+  was already disabled: `~/.config/autostart/polkit-mate-authentication-agent-1.desktop` with
+  `Hidden=true`, masking the system-wide entry so only `lxpolkit` starts.
+- **No lock-on-boot.** Autologin means every boot lands straight on the unlocked desktop. A first attempt
+  spawned a retry-loop script (`spawn-sh-at-startup`) that polled `dms ipc call lock lock` until DMS's
+  IPC was ready — it worked, but left a visible ~2s unlocked-desktop flash before the lock screen
+  appeared (DMS's QML shell genuinely takes that long to initialize, so there's no polling frequency that
+  removes the gap). That approach also had a real bug worth remembering: `dms ipc call lock lock` can
+  return **exit 0 with `"Target not found."` on stdout** — a false-positive success — when DMS's daemon
+  process is up but its QML shell hasn't finished registering IPC targets yet; a retry loop that only
+  checks the exit code stops too early and never actually locks. Abandoned this approach in favor of the
+  greeter switch below, which has no such gap at all.
+
+**Replaced lightdm with greetd + the DMS greeter (`dms-greeter`)**, so the device now boots directly into
+DMS's own themed lock/login screen — no autologin, no unlocked-desktop gap. Installed from DankLinux's
+own OBS repo (the DMS project's upstream build infra):
+
+```sh
+curl -fsSL https://download.opensuse.org/repositories/home:AvengeMedia:danklinux/Debian_13/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/danklinux.gpg
+echo "deb [signed-by=/etc/apt/keyrings/danklinux.gpg] https://download.opensuse.org/repositories/home:/AvengeMedia:/danklinux/Debian_13/ /" | sudo tee /etc/apt/sources.list.d/danklinux.list
+sudo apt update && sudo apt install dms-greeter
+dms greeter enable -y   # disables lightdm, configures greetd
+dms greeter sync -y     # syncs DMS's theme/wallpaper/settings into the greeter
+```
+
+The repo/key/package steps are captured as idempotent Ansible tasks
+(`ansible/roles/dotfiles/tasks/greeter.yml`). **`dms greeter enable`/`sync` are deliberately not
+automated** — both are polkit-gated (they enable/disable systemd units) and polkit's default "active
+local session" check isn't satisfied by a bare SSH connection: run over plain SSH, `dms greeter enable`
+just hangs forever waiting on an authorization that will never come. It only worked the first time
+because the still-active lightdm+autologin niri session gave polkit an active session to authorize
+against. If this ever needs re-running, do it from a session with real console/VNC access, not blind
+SSH. `rpd-labwc` remains installed and selectable from the greeter's session dropdown.
+
+Also disabled niri's own "Important Hotkeys" cheat-sheet popup, which otherwise covers the whole screen
+for a few seconds on every boot: `hotkey-overlay { skip-at-startup }` in `config.kdl` (the line already
+existed, commented out, in niri's own default config template — just needed uncommenting).
 
 ## Build gotchas hit along the way
 

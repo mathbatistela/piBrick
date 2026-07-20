@@ -19,3 +19,6 @@
 
 - name: Apply GTK theme
   ansible.builtin.include_tasks: gtk-theme.yml
+
+- name: Configure the DMS greeter (replaces lightdm)
+  ansible.builtin.include_tasks: greeter.yml

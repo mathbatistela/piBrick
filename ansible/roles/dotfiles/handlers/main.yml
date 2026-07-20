@@ -4,9 +4,3 @@
   ansible.builtin.systemd:
     name: wayvnc
     state: restarted
-
-- name: Restart lightdm
-  become: true
-  ansible.builtin.systemd:
-    name: lightdm
-    state: restarted

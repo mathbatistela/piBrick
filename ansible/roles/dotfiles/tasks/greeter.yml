@@ -1,0 +1,51 @@
+---
+# Replaces lightdm+autologin with greetd + DMS's own greeter, so the device boots
+# straight to a themed lock/login screen instead of an unlocked desktop (no visible
+# gap). Package comes from DankLinux's own OBS repo (the DMS project's upstream
+# build infra, same project we already build DMS from source from).
+- name: Ensure /etc/apt/keyrings exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add DankLinux OBS repo GPG key
+  become: true
+  ansible.builtin.shell: |
+    set -euo pipefail
+    curl -fsSL https://download.opensuse.org/repositories/home:AvengeMedia:danklinux/Debian_13/Release.key | gpg --dearmor -o /etc/apt/keyrings/danklinux.gpg
+  args:
+    creates: /etc/apt/keyrings/danklinux.gpg
+    executable: /bin/bash
+
+- name: Add DankLinux OBS apt repository
+  become: true
+  ansible.builtin.copy:
+    content: |
+      deb [signed-by=/etc/apt/keyrings/danklinux.gpg] https://download.opensuse.org/repositories/home:/AvengeMedia:/danklinux/Debian_13/ /
+    dest: /etc/apt/sources.list.d/danklinux.list
+    mode: "0644"
+  register: danklinux_repo
+
+- name: Update apt cache after adding the repo
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+  when: danklinux_repo.changed
+
+- name: Install dms-greeter (pulls in greetd)
+  become: true
+  ansible.builtin.apt:
+    name: dms-greeter
+    state: present
+
+# NOT automated here: `dms greeter enable -y` and `dms greeter sync -y` disable
+# lightdm / enable greetd via systemd unit changes that are polkit-gated, and
+# polkit's default "active local session" check isn't satisfied by a bare SSH
+# connection - confirmed the hard way (the command just hangs forever over SSH).
+# It worked interactively the first time only because lightdm+autologin was still
+# providing an active graphical session at that moment. Run these two manually,
+# once, from a session with real console access (e.g. over VNC, or right after an
+# SSH-triggered `dms greeter enable` while still logged into the old session) -
+# see docs/niri-dms-setup.md.
