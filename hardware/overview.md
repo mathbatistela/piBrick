@@ -61,7 +61,10 @@ their install steps — see "Relationship to this repo" below.
   USB power-out), thermal regulation threshold.
 - Driver: `battery/bq25890_battery.c`.
 
-## Side buttons — userspace polling, not a kernel driver
+## Carrier-board buttons (power + 1 user button) — userspace polling, not a kernel driver
+
+Note: this is a **different physical pair** from the keyboard module's own 5 "User Buttons" + rotary
+encoder covered below — these two are wired directly to the CM5 carrier board itself.
 
 `button/pibrickbtn.c`, run by `pibrick.service` (`ExecStart=/usr/local/bin/pibrickbtn`):
 
@@ -83,19 +86,20 @@ their install steps — see "Relationship to this repo" below.
   `pibrick-driver`'s `install.sh`); the versions under `button/etc/pibrick/` in the driver repo are the
   source templates.
 
-## Keyboard, trackpad, and side scroll wheel — all one USB-HID device, no Pi-side driver
+## Keyboard module — RP2040 running QMK/Vial, all one USB-HID device, no Pi-side driver
 
-The BBQ20 keyboard module (with its integrated trackpad and side scroll wheel) needs **zero kernel
-driver on the Pi** — it's entirely handled by the keyboard module's own firmware
-(`pibrick_pocketcm5_keyboard`, QMK/Vial-based) turning physical input into standard USB-HID reports, and
-the Pi's generic in-kernel `usbhid` module picks it up. Confirmed live via
-`/proc/bus/input/devices`, which shows it enumerating as **4 separate HID interfaces**, all tagged
-`Uniq=vial:f64c2b3c` (the Vial firmware's serial):
+The BBQ20 keyboard module (key matrix, trackpad, 5 user buttons, rotary encoder + push switch, RGB
+indicators, backlight) is its own standalone computer: a **Raspberry Pi RP2040**, running
+[amarullz/pibrick_pocketcm5_keyboard](https://github.com/amarullz/pibrick_pocketcm5_keyboard), a
+QMK/[Vial](https://vial.rocks) firmware. It needs **zero kernel driver on the Pi CM5 side** — the RP2040
+turns all physical input into standard USB-HID reports, and the Pi's generic in-kernel `usbhid` module
+just picks it up. Confirmed live via `/proc/bus/input/devices`, which shows it enumerating as **4
+separate HID interfaces**, all tagged `Uniq=vial:f64c2b3c` (the Vial firmware's serial):
 
 | Interface | Handler | Purpose |
 |---|---|---|
 | `piBrick PocketCM5 Keyboard` | `event5` | regular key matrix |
-| `piBrick PocketCM5 Keyboard Mouse` | `event6` | trackpad (`REL_X`/`REL_Y`) **and** the side scroll wheel (`REL_HWHEEL`/`REL_WHEEL`/hi-res variants) — same interface, composited by the firmware |
+| `piBrick PocketCM5 Keyboard Mouse` | `event6` | trackpad (`REL_X`/`REL_Y`) **and** the rotary encoder acting as a scroll wheel (`REL_HWHEEL`/`REL_WHEEL`/hi-res variants) — same interface, composited by the firmware |
 | `piBrick PocketCM5 Keyboard System Control` | `event7` | HID "System Control" usage page (power/sleep/wake keys) |
 | `piBrick PocketCM5 Keyboard Consumer Control` | `event8` | HID "Consumer Control" usage page (media keys) |
 
@@ -104,6 +108,56 @@ custom driver needed for normal use. The one udev rule that *does* exist
 (`/etc/udev/rules.d/99-vial.rules`, installed by `pibrick-driver`'s `install.sh`) only relaxes
 `/dev/hidraw*` permissions for the logged-in user, so Vial's browser-based WebHID configurator can remap
 keys without running as root.
+
+### RP2040 GPIO pinout (from the firmware's `keyboard.json` / README)
+
+| Function | GPIO |
+|---|---|
+| Key matrix columns | GP8, GP9, GP10, GP11, GP12, GP13 |
+| Key matrix rows | GP1–GP7 (`COL2ROW` diode direction) |
+| User Button 1 (left top) | GP24 |
+| User Button 2 (left bottom) | GP17 |
+| User Button 3 (right top) | GP0 |
+| User Button 4 (right bottom) | GP15 |
+| User Button 5 (rotary push switch) | GP20 |
+| BBQ20 End/Hangup button | GP14 |
+| Rotary encoder A / B | GP19 / GP21 (`resolution: 2`, i.e. 2 pulses per detent) |
+| Keyboard backlight | GP25 (8 levels) |
+| Panel/arrow-mode backlight indicator | GP29 |
+| RGB indicator (R/G/B) | GP26 / GP27 / GP28 |
+| Trackpad reset | GP16 |
+| Trackpad motion (interrupt) | GP22 |
+| Trackpad I2C (SCL/SDA) | GP23 / GP18 |
+
+`rules.mk` enables `POINTING_DEVICE_ENABLE = yes` with `POINTING_DEVICE_DRIVER = custom` — a
+custom QMK pointing-device driver for the BBQ20's I2C trackpad — plus `OLED_ENABLE`/`HAL_USE_I2C` on
+the same I2C bus.
+
+### Default keymap behavior (`keymaps/default/`)
+
+Four layers, switched with a `SYM` key (single-shot: tap for one character then auto-return to Layer 0,
+or hold to stay):
+
+- **Layer 0** (default): letters. `LGui`/Super lives on the top panel. Modifiers (`ALT`/`CTRL`/`SHIFT`)
+  use One-Shot-Mod (`OSM`) — tap once then press another key, or hold simultaneously. The trackpad's
+  **Green/Call** button drag-scrolls, **Red/Hangup** right-clicks. The **Back** key is a tap-dance:
+  tap → `ESC`, tap-and-hold → toggles the trackpad between mouse mode (static indicator) and arrow-key
+  mode (blinking indicator, trackpad click becomes `ENTER`).
+- **Layer 1**: symbols/numbers printed on the keycaps. `SYM` again → Layer 2, `Right Shift` → Layer 3.
+- **Layer 2**: extended characters. Reachable directly from Layer 0 by double-tapping `SYM`.
+- **Layer 3**: function/navigation keys. Reachable directly from Layer 0 via `SYM` then `Right Shift`.
+- The rotary encoder changes keyboard backlight brightness when double-tap-and-held on `SYM`.
+
+Fully remappable via [vial.rocks](https://vial.rocks) (talks to the `hidraw` device over WebHID); a
+factory-default `.vil` keymap file ships in the firmware repo's `docs/` to restore from if a remap goes
+wrong.
+
+### Flashing (only needed to update/reflash the firmware itself)
+
+Power off → hold **User Button 1** → plug the bottom USB-C port into a PC → device enumerates as a
+`RPI-RP2` mass-storage drive (RP2040's native UF2 bootloader) → drag the built `.uf2` onto it → it
+reboots automatically back into HID mode. `make pibrick_pocketcm5_keyboard:default` builds it (standard
+QMK build).
 
 ## Relationship to this repo
 
