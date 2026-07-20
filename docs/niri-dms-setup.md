@@ -377,3 +377,31 @@ GTK apps via `adw-gtk3` + matugen's GTK color CSS) — they just each apply it t
 unrelated theming mechanism. There's no single "make everything match" switch on this desktop stack;
 every toolkit (foot, GTK3/4, niri/DMS's own QML) is themed independently by matugen, and each needed its
 own fix this session (foot's template bug, GTK's inactive-theme gap, DMS's own popup-clamping bugs).
+
+### A fourth instance of the same missing-clamp bug: the process list / System Monitor
+
+Predicted in this doc earlier ("worth grepping for other hardcoded popupWidth/popupHeight assignments")
+— found one just by opening the process list (`Modules/ProcessList/ProcessListPopout.qml`, opened by
+tapping the CPU/memory bar widgets or `dms ipc call processlist open`). Same exact bug shape as
+`AppDrawerPopout`/`DankDashPopout`:
+```qml
+// before
+popupWidth: Math.round(Theme.fontSizeMedium * 46)
+popupHeight: Math.round(Theme.fontSizeMedium * 39)
+// after
+popupWidth: Math.min(Math.round(Theme.fontSizeMedium * 46), screen ? screen.width - 40 : Math.round(Theme.fontSizeMedium * 46))
+popupHeight: Math.min(Math.round(Theme.fontSizeMedium * 39), screen ? screen.height - 40 : Math.round(Theme.fontSizeMedium * 39))
+```
+~600-700 logical px against the 540-wide screen, no clamp — cut off the Memory/PID columns and the
+bottom action bar. Fixed with the same `Math.min(..., screen.width/height - margin)` pattern as before.
+
+**Debugging note, in case this trips someone up again**: the *first* verification attempt looked like
+the fix hadn't worked — screenshots kept showing the same overflow after rebuilding/reinstalling.
+Debug logging proved `popupWidth` was correctly computing `500` (well inside the 540px screen) the whole
+time; the "still broken" screenshots were actually a **second, stale popout instance** still open
+underneath the fresh one from earlier testing (`dms ipc call processlist open` vs. triggering it via
+`widget toggle cpuUsage` opened what looked like overlapping windows). Always `processlist close` (or
+confirm a clean idle screenshot) before re-testing a popup fix — a leftover instance from a previous
+test can make a working fix look broken.
+
+Four for four now on this bug class. Added to `dms-patches/` like the others.

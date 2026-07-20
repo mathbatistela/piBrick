@@ -15,6 +15,10 @@
     {
       "path": "quickshell/matugen/templates/foot.ini",
       "description": "Fix invalid foot terminal color template: [colors-dark] section renamed to [colors] (foot only recognizes [colors]), cursor color moved to its own [cursor] section, dim-blend-towards option dropped (doesn't exist in foot 1.21.0). Also added a [csd] section (color/button-color) - the template never set this, so foot's titlebar defaulted to the light foreground color as its background, a pale/white bar clashing with the dark theme everywhere else."
+    },
+    {
+      "path": "quickshell/Modules/ProcessList/ProcessListPopout.qml",
+      "description": "Clamp popupWidth/popupHeight to screen size. Was hardcoded to Theme.fontSizeMedium * 46/39 (~600-700px) with no clamp; overflowed the 540-logical-px screen, cutting off the Memory/PID columns and the bottom action bar. Same missing-clamp bug class as AppDrawerPopout and DankDashPopout above."
     }
   ]
 }
