@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Re-asserts /etc/pibrick/fan-level onto cooling_device0/cur_state on a tight loop.
+# Runs only while pibrick-fan-manual.service is active; see `pibrick-fan` for the CLI.
+#
+# The kernel's step_wise governor is still live underneath this (we never disable
+# thermal_zone0) and keeps trying to correct cur_state on its own schedule; this loop
+# just wins that fight by re-writing more often (~0.3s) than the governor does
+# (observed correcting within ~0.5-1s). The 110C critical shutdown trip is evaluated
+# independently of cur_state, so it still fires even while a manual level is pinned.
+set -euo pipefail
+
+CD=/sys/class/thermal/cooling_device0
+STATE=/etc/pibrick/fan-level
+
+while true; do
+  if [ -f "$STATE" ]; then
+    cat "$STATE" > "$CD/cur_state" 2>/dev/null || true
+  fi
+  sleep 0.3
+done

@@ -22,3 +22,6 @@
 
 - name: Configure the DMS greeter (replaces lightdm)
   ansible.builtin.include_tasks: greeter.yml
+
+- name: Apply fan control dotfiles
+  ansible.builtin.include_tasks: fan.yml

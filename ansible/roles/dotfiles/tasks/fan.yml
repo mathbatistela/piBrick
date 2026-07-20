@@ -1,0 +1,22 @@
+---
+- name: Install pibrick-fan CLI
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/fan/pibrick-fan"
+    dest: /usr/local/bin/pibrick-fan
+    mode: "0755"
+
+- name: Install pibrick-fan-hold loop
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/fan/pibrick-fan-hold"
+    dest: /usr/local/bin/pibrick-fan-hold
+    mode: "0755"
+
+- name: Install pibrick-fan-manual systemd unit
+  become: true
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/fan/pibrick-fan-manual.service"
+    dest: /etc/systemd/system/pibrick-fan-manual.service
+    mode: "0644"
+  notify: Reload systemd daemon

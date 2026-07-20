@@ -4,3 +4,8 @@
   ansible.builtin.systemd:
     name: wayvnc
     state: restarted
+
+- name: Reload systemd daemon
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: true

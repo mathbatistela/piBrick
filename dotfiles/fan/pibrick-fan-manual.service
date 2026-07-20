@@ -1,0 +1,10 @@
+[Unit]
+Description=piBrick manual fan speed override (pinned cur_state loop)
+Documentation=file:/usr/local/bin/pibrick-fan
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pibrick-fan-hold
+Restart=no
+
+# Not enabled/started at boot - only via `pibrick-fan set`/`pibrick-fan auto`.

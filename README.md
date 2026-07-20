@@ -10,6 +10,7 @@ device itself).
   on this device
 - `docs/pibrick-driver.md`, `docs/piBrick-hw-repo.md` — repo-structure references for the two upstream
   hardware repos (kernel drivers; case/PCB design)
+- `docs/fan-control.md` — CPU fan investigation notes and the `pibrick-fan` manual-override tool
 - `docs/agents/` — operating guide for an agent working on this device: access, safety rules, the
   Ansible workflow, screenshotting
 - `dotfiles/` — live-pulled OS/desktop config (niri, bash, wayvnc, foot, autostart)

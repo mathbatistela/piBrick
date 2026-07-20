@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# CLI to toggle the CPU fan (hwmon3/pwmfan, cooling_device0) between the kernel's
+# automatic step_wise governor and a pinned manual level. Run with sudo.
+#
+# "auto" never touches thermal_zone0/mode — that was tried once and broke the
+# governor's reactivity to temperature until reboot. Manual mode instead runs a
+# loop (pibrick-fan-manual.service) that re-asserts cur_state faster than the
+# governor corrects it.
+#
+# IMPORTANT: on this hardware, cur_state only ever steps *up* on a genuine
+# hardware trip-crossing interrupt - a plain sysfs write (even to a trip point,
+# to force a re-evaluate) does not make the governor re-sync upward. So once we
+# write cur_state manually, it can get stuck low even while clearly overheating,
+# until a real trip crossing happens to fire later. So "auto" doesn't just stop
+# the pin loop and hope - it computes the state the trip table says the *current*
+# temp warrants and writes that once as a safe handoff, then stops the loop.
+# From that accurate starting point, real future temperature changes generate
+# their own trip-crossing interrupts and the kernel governor tracks correctly.
+set -euo pipefail
+
+CD=/sys/class/thermal/cooling_device0
+ZONE=/sys/class/thermal/thermal_zone0
+HWMON=/sys/class/hwmon/hwmon3
+STATE=/etc/pibrick/fan-level
+SERVICE=pibrick-fan-manual.service
+
+usage() {
+  echo "Usage: pibrick-fan {auto|status|set <0-4|off|low|med|high|max>}" >&2
+  exit 1
+}
+
+# Trip temps are read live (not hardcoded) in case they're ever tuned.
+state_for_current_temp() {
+  local temp state trip
+  temp=$(cat "$ZONE/temp")
+  state=0
+  for state in 4 3 2 1; do
+    trip=$(cat "$ZONE/trip_point_${state}_temp" 2>/dev/null || echo 999999)
+    if [ "$temp" -ge "$trip" ]; then
+      echo "$state"
+      return
+    fi
+  done
+  echo 0
+}
+
+status() {
+  if systemctl is-active --quiet "$SERVICE"; then
+    echo "mode: manual (level $(cat "$STATE" 2>/dev/null || echo '?'))"
+  else
+    echo "mode: auto (kernel step_wise governor)"
+  fi
+  echo "cur_state=$(cat "$CD/cur_state") pwm=$(cat "$HWMON/pwm1") rpm=$(cat "$HWMON/fan1_input") temp=$(( $(cat "$ZONE/temp") / 1000 ))C"
+}
+
+case "${1:-}" in
+  auto)
+    systemctl stop "$SERVICE"
+    safe=$(state_for_current_temp)
+    echo "$safe" > "$CD/cur_state"
+    echo "Manual override stopped; synced cur_state=$safe for current temp, kernel governor back in control."
+    ;;
+  status)
+    status
+    ;;
+  set)
+    level="${2:-}"
+    case "$level" in
+      off) level=0 ;;
+      low) level=1 ;;
+      med|medium) level=2 ;;
+      high) level=3 ;;
+      max) level=4 ;;
+      0|1|2|3|4) ;;
+      *) usage ;;
+    esac
+    echo "$level" > "$STATE"
+    systemctl restart "$SERVICE"
+    echo "Manual override active at level $level (see: pibrick-fan status)."
+    ;;
+  *)
+    usage
+    ;;
+esac

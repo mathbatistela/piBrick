@@ -61,6 +61,42 @@ their install steps — see "Relationship to this repo" below.
   USB power-out), thermal regulation threshold.
 - Driver: `battery/bq25890_battery.c`.
 
+## CPU fan — standard in-tree `pwm-fan`, entirely kernel-managed
+
+Unlike the other subsystems above, the fan needs **no `pibrick-driver` code at all** — it's the
+mainline Linux `pwm_fan.ko` hwmon driver plus the generic thermal framework, both already built into
+the stock kernel. Full investigation notes, the manual-override tool, and the safety gotcha below are
+in [`docs/fan-control.md`](../docs/fan-control.md); this section is just the hardware facts.
+
+- **`hwmon3` (`pwmfan`)**, driven by `pwmchip0`: `pwm1` (0–255 duty), `pwm1_enable`, `fan1_input`
+  (tachometer RPM). Bound as **`cooling_device0`** (`type: pwm-fan`) to **`thermal_zone0`**
+  (`cpu-thermal`) via the device tree's `cooling_fan` node (`compatible = "pwm-fan"`) — this binding
+  isn't set through `config.txt` `dtparam=`/`dtoverlay=` lines, it's baked into the base overlay/dtb.
+- **Cooling curve** (from the `cooling_fan` node's `cooling-levels`): 5 states (0–4) → PWM duty
+  `0 / 75 / 125 / 175 / 250` (of 255), mapped to `thermal_zone0`'s 4 **active** trip points at
+  `50 / 60 / 67.5 / 75 °C`, each with `5 °C` hysteresis, plus a `110 °C` **critical** trip that triggers
+  an independent system shutdown — evaluated directly by the thermal core, not through the cooling
+  device/governor path, so it still fires even while the fan is manually pinned.
+- Governed by the thermal framework's `step_wise` governor (the only one compiled in —
+  `thermal_zone0/available_policies` lists just `step_wise`, no `user_space` governor available).
+- **Two sysfs surfaces control the same hardware, and they are not equivalent**: `hwmon3/pwm1` is a raw
+  duty register that the driver's own background loop continuously smooths back toward whatever
+  `cooling_device0/cur_state` says (within about a second) — writing it directly is not a reliable
+  override. `cooling_device0/cur_state` (0–4) is what the governor and driver actually treat as the
+  source of truth, and is what genuinely holds when written externally.
+- **Confirmed quirk**: `cur_state` on this zone only ever steps *upward* in response to a genuine
+  hardware trip-crossing interrupt — a plain sysfs write (even rewriting a trip point to force
+  re-evaluation) does not make the governor re-sync upward. Downward correction is comparatively lazy
+  and happens without a fresh crossing. Practical effect: if `cur_state` is ever written externally to
+  something lower than the current temperature warrants, it can stay there indefinitely — confirmed by
+  forcing `cur_state=0` at 58–60 °C (above the 50 °C trip) and watching it sit there for 10+ seconds
+  with zero self-correction.
+- **`thermal_zone0/mode`** (`enabled`/`disabled`) looks like an auto/manual switch but isn't a safe one
+  on this hardware: disabling it and re-enabling it left the zone's governor permanently unreactive to
+  temperature changes until a full reboot — don't use it for manual fan control.
+- For manual control, use the `pibrick-fan` CLI (installed by this repo's `dotfiles`/`fan` role — see
+  `docs/fan-control.md`), not raw sysfs writes.
+
 ## Carrier-board buttons (power + 1 user button) — userspace polling, not a kernel driver
 
 Note: this is a **different physical pair** from the keyboard module's own 5 "User Buttons" + rotary
