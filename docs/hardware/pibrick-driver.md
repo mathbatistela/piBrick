@@ -3,7 +3,7 @@
 [lshaf/pibrick-driver](https://github.com/lshaf/pibrick-driver): the out-of-tree Linux kernel driver
 tree for the piBrick Pocket-CM5's display, touchscreen, battery charger, and side buttons. Cloned on the
 device at `~/pi_brick/pibrick-driver`. For *what the hardware does* (subsystem-by-subsystem behavior),
-see [`hardware/overview.md`](../hardware/overview.md) — this doc is a repo-structure reference: what's
+see [`overview.md`](overview.md) — this doc is a repo-structure reference: what's
 in the tree and why.
 
 ## Install flow

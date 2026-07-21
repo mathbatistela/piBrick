@@ -48,4 +48,4 @@
 # providing an active graphical session at that moment. Run these two manually,
 # once, from a session with real console access (e.g. over VNC, or right after an
 # SSH-triggered `dms greeter enable` while still logged into the old session) -
-# see docs/niri-dms-setup.md.
+# see docs/setup/niri-dms-setup.md.

@@ -343,7 +343,7 @@ standard XDG way, no system files touched: `dotfiles/autostart/squeekboard.deskt
 override of the system entry with `Hidden=true` added, applied by the `dotfiles` Ansible role's
 `autostart.yml`, which also masks the generated systemd unit
 (`systemctl --user mask app-squeekboard@autostart.service`) so it can't be started again even manually.
-**Side effect**: the side-button double-press action (`keyboard-toggle.sh`, see `hardware/overview.md`)
+**Side effect**: the side-button double-press action (`keyboard-toggle.sh`, see `docs/hardware/overview.md`)
 toggles squeekboard over D-Bus (`sm.puri.OSK0`) — with squeekboard no longer running, that D-Bus name no
 longer exists, so double-pressing the user button to toggle the on-screen keyboard silently does
 nothing now. The `squeekboard` apt package itself is left installed (just not autostarted), so
@@ -494,7 +494,7 @@ answer.
 
 The two side buttons on the keyboard module send standard `XF86AudioRaiseVolume` /
 `XF86AudioLowerVolume` keycodes (via the RP2040 keyboard firmware's Consumer Control HID reports —
-see `docs/pibrick-driver.md`'s sibling doc for the keyboard firmware repo, not the GPIO button driver).
+see `docs/hardware/pibrick-driver.md`'s sibling doc for the keyboard firmware repo, not the GPIO button driver).
 Repurposed at the niri compositor level, since a physical volume rocker is a more natural fit for
 switching focus between tiled windows than for volume on this device (volume is still reachable via
 the DMS control center / bar slider):

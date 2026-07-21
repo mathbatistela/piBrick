@@ -13,13 +13,13 @@ Via `ansible/` (see [`ansible-workflow.md`](ansible-workflow.md)):
 - **Kernel drivers** (display/touch/battery/buttons) — owned by
   [lshaf/pibrick-driver](https://github.com/lshaf/pibrick-driver), cloned on the device at
   `~/pi_brick/pibrick-driver`. Don't reimplement its `install.sh` here; link to it. See
-  `hardware/overview.md` for what it does.
+  `docs/hardware/overview.md` for what it does.
 - **Keyboard firmware** — owned by
   [amarullz/pibrick_pocketcm5_keyboard](https://github.com/amarullz/pibrick_pocketcm5_keyboard) (RP2040
   QMK/Vial), cloned at `~/pi_brick/pibrick_pocketcm5_keyboard`. Reflashing it is a manual physical
-  procedure (see `hardware/overview.md`), not something this repo automates.
+  procedure (see `docs/hardware/overview.md`), not something this repo automates.
 - **The desktop stack's own source** — `niri`, `quickshell`, `dms`, `matugen`, `dgop`, `dsearch` are
-  built from source on the device (see `docs/niri-dms-setup.md`), each an upstream repo under `~/src/`
+  built from source on the device (see `docs/setup/niri-dms-setup.md`), each an upstream repo under `~/src/`
   and `~/dms` with its own git history. This repo captures their *config* as dotfiles, not their source
   or build process — **except** a small, explicit set of local bug fixes to `~/dms` itself, tracked in
   [`../../dms-patches/`](../../dms-patches/) (full file backups + a script to reapply them after a

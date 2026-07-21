@@ -6,7 +6,7 @@
 # variable names, which the stock Raspberry Pi OS theme (PiXtrix) doesn't. adw-gtk3
 # does, so this installs it and switches to it. Not packaged for Debian - installed
 # from the upstream GitHub release directly, matching how niri/quickshell/dms/etc.
-# are all handled outside apt on this device (see docs/niri-dms-setup.md).
+# are all handled outside apt on this device (see docs/setup/niri-dms-setup.md).
 - name: Check if adw-gtk3-dark theme is already installed
   ansible.builtin.stat:
     path: "{{ ansible_env.HOME }}/.themes/adw-gtk3-dark/gtk-3.0/gtk.css"

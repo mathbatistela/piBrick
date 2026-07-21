@@ -1,7 +1,7 @@
 # Fan control — investigation notes and the `pibrick-fan` tool
 
 The CPU fan is entirely managed by the mainline Linux `pwm_fan.ko` hwmon driver and the generic
-thermal framework — no `pibrick-driver` code involved (see `hardware/overview.md`'s "CPU fan" section
+thermal framework — no `pibrick-driver` code involved (see `docs/hardware/overview.md`'s "CPU fan" section
 for the hardware facts: hwmon/cooling-device wiring, the trip/PWM table, hysteresis). This doc covers
 *how manual control was figured out*, the safety incident that shaped its design, and how to use the
 `pibrick-fan` CLI this repo installs.

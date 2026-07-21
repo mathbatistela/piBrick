@@ -21,7 +21,7 @@
 # Under niri (unlike rpd-labwc), both lxpolkit and polkit-mate-authentication-agent-1
 # autostart and race to register as the session's PolicyKit agent, throwing a visible
 # "An authentication agent already exists for the given subject" error on boot. Mask
-# the MATE one so only lxpolkit runs. See docs/niri-dms-setup.md for the full story.
+# the MATE one so only lxpolkit runs. See docs/setup/niri-dms-setup.md for the full story.
 - name: Disable duplicate MATE polkit authentication agent autostart
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../dotfiles/autostart/polkit-mate-authentication-agent-1.desktop"

@@ -1,7 +1,7 @@
 # Screenshotting the device's screen
 
 The device runs Wayland (either the stock labwc desktop or the custom niri session — see
-`docs/niri-dms-setup.md`), so there's no single always-right socket: figure out which session is
+`docs/setup/niri-dms-setup.md`), so there's no single always-right socket: figure out which session is
 actually active first, then grab the shot from that socket.
 
 ## 1. Find the active Wayland socket

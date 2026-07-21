@@ -22,8 +22,8 @@ Three separate upstream repos, each owning a different layer:
 
 | Repo | Owns | Repo-structure reference |
 |---|---|---|
-| [amarullz/piBrick](https://github.com/amarullz/piBrick) | Hardware design: PCB/schematic links, 3D case files, product docs | [`docs/piBrick-hw-repo.md`](../docs/piBrick-hw-repo.md) |
-| [lshaf/pibrick-driver](https://github.com/lshaf/pibrick-driver) | Linux kernel drivers: display panel, touchscreen, battery charger, side buttons | [`docs/pibrick-driver.md`](../docs/pibrick-driver.md) |
+| [amarullz/piBrick](https://github.com/amarullz/piBrick) | Hardware design: PCB/schematic links, 3D case files, product docs | [`piBrick-hw-repo.md`](piBrick-hw-repo.md) |
+| [lshaf/pibrick-driver](https://github.com/lshaf/pibrick-driver) | Linux kernel drivers: display panel, touchscreen, battery charger, side buttons | [`pibrick-driver.md`](pibrick-driver.md) |
 | [amarullz/pibrick_pocketcm5_keyboard](https://github.com/amarullz/pibrick_pocketcm5_keyboard) | QMK/Vial firmware for the BBQ20 keyboard module (keys, trackpad, scroll wheel) | — (see the "Keyboard module" section below) |
 
 On the device itself, both are checked out under `~/pi_brick/` (`piBrick/`, `pibrick-driver/`,
@@ -66,7 +66,7 @@ their install steps — see "Relationship to this repo" below.
 Unlike the other subsystems above, the fan needs **no `pibrick-driver` code at all** — it's the
 mainline Linux `pwm_fan.ko` hwmon driver plus the generic thermal framework, both already built into
 the stock kernel. Full investigation notes, the manual-override tool, and the safety gotcha below are
-in [`docs/fan-control.md`](../docs/fan-control.md); this section is just the hardware facts.
+in [`docs/setup/fan-control.md`](../setup/fan-control.md); this section is just the hardware facts.
 
 - **`hwmon3` (`pwmfan`)**, driven by `pwmchip0`: `pwm1` (0–255 duty), `pwm1_enable`, `fan1_input`
   (tachometer RPM). Bound as **`cooling_device0`** (`type: pwm-fan`) to **`thermal_zone0`**
@@ -95,7 +95,7 @@ in [`docs/fan-control.md`](../docs/fan-control.md); this section is just the har
   on this hardware: disabling it and re-enabling it left the zone's governor permanently unreactive to
   temperature changes until a full reboot — don't use it for manual fan control.
 - For manual control, use the `pibrick-fan` CLI (installed by this repo's `dotfiles`/`fan` role — see
-  `docs/fan-control.md`), not raw sysfs writes.
+  `docs/setup/fan-control.md`), not raw sysfs writes.
 
 ## Carrier-board buttons (power + 1 user button) — userspace polling, not a kernel driver
 
@@ -113,8 +113,8 @@ encoder covered below — these two are wired directly to the CM5 carrier board 
   env XDG_RUNTIME_DIR=/run/user/1000 dms ipc call ...`, since `pibrickbtn` runs as root (refuses to run
   `dms` as root directly) and needs the desktop user's session to reach DMS's IPC socket — same pattern
   `actions/keyboard-toggle.sh` already used for D-Bus.
-  - **Short/long/double disambiguation was attempted and abandoned** (see `docs/pibrick-driver.md` for
-    the full investigation): this button's physical contacts are noisy enough that a fixed-timeout
+  - **Short/long/double disambiguation was attempted and abandoned** (see `docs/hardware/pibrick-driver.md`
+    for the full investigation): this button's physical contacts are noisy enough that a fixed-timeout
     classification scheme proved unreliable in practice — direct GPIO event tracing showed genuine
     presses misclassified in multiple different ways (short read as long, double undetected even at
     900ms windows, and debounce filtering making it worse, not better). Kept simple and robust instead.
@@ -122,13 +122,13 @@ encoder covered below — these two are wired directly to the CM5 carrier board 
     independent PMIC-level (likely bq25890) forced shutdown that bypasses this Linux software entirely
     — the device powered off mid-testing. That abrupt power loss also corrupted the compiled
     `pibrickbtn` binary once (truncated to 0 bytes, `Exec format error` on next boot) — see the
-    recovery steps in `docs/pibrick-driver.md` if this happens again.
+    recovery steps in `docs/hardware/pibrick-driver.md` if this happens again.
 - **User button**, disambiguated by timing windows (`wait_release` 700ms, `wait_second_press` 350ms):
   - short press → `actions/brightness.sh` (steps backlight ±64/1023, wraps)
   - long press (never released in time) → `actions/display-on-off.sh` (toggles `pibrick_display_enable`)
   - double press → `actions/keyboard-toggle.sh` (toggles the **squeekboard** on-screen keyboard over
     D-Bus — a software keyboard, unrelated to the physical BBQ20 one. **Currently a no-op**: squeekboard's
-    autostart is disabled on this device, see `docs/niri-dms-setup.md`, so its D-Bus name doesn't exist
+    autostart is disabled on this device, see `docs/setup/niri-dms-setup.md`, so its D-Bus name doesn't exist
     and this action silently does nothing)
 - At startup it does `rmmod gpio_keys; rmmod hyn_ts; modprobe hyn_ts` — unloading the generic kernel
   `gpio_keys` driver so it doesn't race with the userspace poller for the same GPIO lines.
@@ -215,5 +215,5 @@ This repo does not vendor or re-run `pibrick-driver`'s `install.sh` (kernel modu
 `/boot/firmware/config.txt` edits, `pibrick.service`/button setup) — that repo is the source of truth
 for the hardware layer and is already installed and working on the device. This repo's Ansible
 automation (`ansible/`) only manages the desktop/OS layer on top: dotfiles, VNC, and apt packages. See
-[`docs/niri-dms-setup.md`](../docs/niri-dms-setup.md) for how the niri + DankMaterialShell desktop stack
+[`docs/setup/niri-dms-setup.md`](../setup/niri-dms-setup.md) for how the niri + DankMaterialShell desktop stack
 on top of this hardware was built.

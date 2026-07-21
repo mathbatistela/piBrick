@@ -1,7 +1,7 @@
 # Agent guide
 
 This repo manages a physical device: a piBrick Pocket-CM5 handheld at `mbatistela@192.168.1.99`
-(hostname `piBrick`). Read `README.md` and `hardware/overview.md` first — they cover what the device is
+(hostname `piBrick`). Read `README.md` and `docs/hardware/overview.md` first — they cover what the device is
 and what already runs on it.
 
 Full operating guide: **[`docs/agents/`](docs/agents/index.md)** — access/SSH/VNC, scope and safety

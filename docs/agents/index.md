@@ -1,7 +1,7 @@
 # Agent docs
 
 Operating guide for an AI agent (or a human moving fast) working on the piBrick device through this
-repo. Read `README.md` and `hardware/overview.md` at the repo root first for what the device *is*; this
+repo. Read `README.md` and `docs/hardware/overview.md` first for what the device *is*; this
 folder is about *how to do things* to it.
 
 - [`scope-and-safety.md`](scope-and-safety.md) — what this repo manages vs. doesn't, and which actions

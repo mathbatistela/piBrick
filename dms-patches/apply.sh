@@ -4,7 +4,7 @@
 # from a control machine) after any `git pull` in ~/dms, and any time you want to
 # confirm the fixes are still in place. Idempotent: safe to run repeatedly.
 #
-# See docs/niri-dms-setup.md for what each patched file fixes and why.
+# See docs/setup/niri-dms-setup.md for what each patched file fixes and why.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

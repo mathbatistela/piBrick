@@ -4,16 +4,18 @@ Admin repo for my [piBrick Pocket-CM5](https://github.com/amarullz/piBrick) hand
 OS/desktop dotfiles, and Ansible automation to configure the device over SSH (or run locally on the
 device itself).
 
-- `hardware/overview.md` — what the interactable hardware is and how the drivers use it (display,
-  touch, battery, buttons, keyboard/trackpad/scroll-wheel)
-- `docs/niri-dms-setup.md` — build log for the custom niri + DankMaterialShell desktop stack running
-  on this device
-- `docs/pibrick-driver.md`, `docs/piBrick-hw-repo.md` — repo-structure references for the two upstream
-  hardware repos (kernel drivers; case/PCB design)
-- `docs/fan-control.md` — CPU fan investigation notes and the `pibrick-fan` manual-override tool
+- `docs/hardware/` — the physical device and its upstream repos:
+  - `overview.md` — what the interactable hardware is and how the drivers use it (display, touch,
+    battery, buttons, keyboard/trackpad/scroll-wheel)
+  - `pibrick-driver.md`, `piBrick-hw-repo.md` — repo-structure references for the two upstream hardware
+    repos (kernel drivers; case/PCB design)
+- `docs/setup/` — build-log/investigation notes for software configured on the device:
+  - `niri-dms-setup.md` — the custom niri + DankMaterialShell desktop stack
+  - `fan-control.md` — CPU fan investigation notes and the `pibrick-fan` manual-override tool
+  - `terminal.md` — the zsh/starship/zoxide/fzf/atuin/yazi terminal setup and why each piece is there
 - `docs/agents/` — operating guide for an agent working on this device: access, safety rules, the
   Ansible workflow, screenshotting
-- `dotfiles/` — live-pulled OS/desktop config (niri, bash, wayvnc, foot, autostart)
+- `dotfiles/` — live-pulled OS/desktop config (niri, bash, zsh, wayvnc, foot, autostart)
 - `ansible/` — playbook + roles to apply `dotfiles/`, enable VNC, install the desktop-stack apt
   packages, and keep the GTK theme (adw-gtk3) matching DMS, idempotently
 - `dms-patches/` — backups of local bug fixes applied on top of the from-source `~/dms`

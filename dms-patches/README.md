@@ -2,7 +2,7 @@
 
 Backups of local fixes applied on top of `~/dms` (a from-source clone of
 [AvengeMedia/DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) built on the device —
-see [`../docs/niri-dms-setup.md`](../docs/niri-dms-setup.md)). Those fixes only exist as **uncommitted
+see [`../docs/setup/niri-dms-setup.md`](../docs/setup/niri-dms-setup.md)). Those fixes only exist as **uncommitted
 working-tree changes** in `~/dms` itself — not upstreamed, not committed there. This directory is their
 real backup, and the mechanism for reapplying them whenever `~/dms` gets updated.
 

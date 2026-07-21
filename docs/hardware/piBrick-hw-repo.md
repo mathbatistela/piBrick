@@ -3,7 +3,7 @@
 [amarullz/piBrick](https://github.com/amarullz/piBrick): the upstream **hardware design** repo — the
 actual product/case/PCB source for the Pocket-CM5, as opposed to the driver or keyboard-firmware code.
 Cloned on the device at `~/pi_brick/piBrick`, GPLv3 licensed. This doc is a repo-structure reference;
-see [`hardware/overview.md`](../hardware/overview.md) for the device's technical/electrical behavior.
+see [`overview.md`](overview.md) for the device's technical/electrical behavior.
 
 ## What's actually in the repo
 
@@ -17,7 +17,7 @@ vendored as files here. This repo only carries the mechanical/case design and pr
 
 | Path | Contents |
 |---|---|
-| `Pocket-CM5/README.md` | Full spec sheet, peripherals list, links, resources, demo videos — the canonical source for the spec bullets in `hardware/overview.md` |
+| `Pocket-CM5/README.md` | Full spec sheet, peripherals list, links, resources, demo videos — the canonical source for the spec bullets in `docs/hardware/overview.md` |
 | `Pocket-CM5/3d/sketchup/` | SketchUp (`.skp`) source files for the case: current production design (`pibrick-pocketcm5-prod.skp`, `-prod-topmodify.skp`), design variants (`-design.skp`, `-clip-glass-display.skp`, `-design-glass-display.skp`), 2nd-batch/MagSafe variants, antenna/fan enclosures, and `extras/` (assembly jigs: `10pin-bend-jig.skp`, `display-jig.skp`) |
 | `Pocket-CM5/3d/*.skp` (repo root of `3d/`) | Thread-insert case variants (`-noglue`, `-fdm`, plain) and the 2nd-batch MagSafe `.skp` |
 | `Pocket-CM5/3d/stl/` | Exported STLs for printing, organized by purpose: `jlc3dp-0995-resized/` (parts scaled ×0.995 to compensate for JLC3DP's printer tolerance), `accessories/` (antenna-fan enclosure, bend/display jigs), `126280-Battery/` (case variant for a 126280-size cell), `legacy/` (three prior design generations: `old-design/`, `v1/`, `1st-batch-design/`, plus a `3d-stl.zip` bundle) |
