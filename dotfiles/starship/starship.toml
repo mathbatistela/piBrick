@@ -1,0 +1,37 @@
+# ~/.config/starship.toml: managed by piBrick's ansible dotfiles role.
+# Edit dotfiles/starship/starship.toml in the repo, not this file directly.
+#
+# No Nerd Font is installed on the device, so this sticks to plain Unicode
+# (no glyph icons) rather than the default preset's Powerline-style symbols.
+
+format = """
+$directory$git_branch$git_status
+$character"""
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "bold blue"
+
+[git_branch]
+symbol = ""
+format = "[$symbol$branch]($style) "
+style = "yellow"
+
+[git_status]
+format = "[$all_status$ahead_behind]($style)"
+style = "yellow"
+
+[cmd_duration]
+min_time = 2000
+format = "took [$duration](italic yellow) "
+
+[username]
+disabled = true
+
+[hostname]
+disabled = true

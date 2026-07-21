@@ -1,0 +1,13 @@
+---
+- name: Ensure DankMaterialShell plugins directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/DankMaterialShell/plugins"
+    state: directory
+    mode: "0755"
+
+- name: Install pibrick-fan DMS plugin (PibrickFan)
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/dms-plugins/PibrickFan"
+    dest: "{{ ansible_env.HOME }}/.config/DankMaterialShell/plugins/"
+    mode: "0644"
+  notify: Rescan DMS plugins

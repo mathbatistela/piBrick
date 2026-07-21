@@ -9,3 +9,8 @@
   become: true
   ansible.builtin.systemd:
     daemon_reload: true
+
+- name: Rescan DMS plugins
+  ansible.builtin.command: dms ipc plugin-scan scan
+  failed_when: false
+  changed_when: false

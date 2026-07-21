@@ -1,6 +1,13 @@
 [Unit]
 Description=piBrick manual fan speed override (pinned cur_state loop)
 Documentation=file:/usr/local/bin/pibrick-fan
+# Every level change restarts this unit (see `pibrick-fan set`). Dragging or
+# scrolling the DMS slider through several levels in quick succession can
+# legitimately restart it more than systemd's default rate limit allows
+# (5 starts / 10s), which then makes `systemctl restart` fail outright.
+# These restarts are expected, user-driven, and harmless - not a crash loop -
+# so the limit is disabled for this unit rather than tuned.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple

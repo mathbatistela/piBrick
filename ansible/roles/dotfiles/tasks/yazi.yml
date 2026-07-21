@@ -1,0 +1,12 @@
+---
+- name: Ensure yazi config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/yazi"
+    state: directory
+    mode: "0755"
+
+- name: Apply yazi config
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../dotfiles/yazi/yazi.toml"
+    dest: "{{ ansible_env.HOME }}/.config/yazi/yazi.toml"
+    mode: "0644"

@@ -1,0 +1,55 @@
+# ~/.zshrc: managed by piBrick's ansible dotfiles role.
+# Edit dotfiles/zsh/zshrc in the repo, not this file directly (see docs/agents/ansible-workflow.md).
+
+# --- History ---
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_REDUCE_BLANKS
+setopt SHARE_HISTORY
+setopt APPEND_HISTORY
+setopt INC_APPEND_HISTORY
+
+# --- Completion ---
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+# --- Autosuggestions + syntax highlighting (Debian-packaged plugins) ---
+# syntax-highlighting must be sourced last: https://github.com/zsh-users/zsh-syntax-highlighting#faq
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# --- fzf: Ctrl-T fuzzy-inserts a file path, Alt-C fuzzy-cd's into a subdirectory ---
+source /usr/share/doc/fzf/examples/key-bindings.zsh
+source /usr/share/doc/fzf/examples/completion.zsh
+
+# --- zoxide: `z <fuzzy dir>` jumps to frequently/recently used directories ---
+eval "$(zoxide init zsh)"
+
+# --- atuin: searchable shell history with context, takes over Ctrl-R from fzf above ---
+eval "$(atuin init zsh)"
+
+# --- prompt ---
+eval "$(starship init zsh)"
+
+# --- aliases ---
+alias ls='eza --group-directories-first'
+alias ll='eza -l --group-directories-first --git'
+alias la='eza -la --group-directories-first --git'
+alias lt='eza --tree --level=2'
+alias cat='batcat --paging=never'
+alias fd='fdfind'
+alias grep='grep --color=auto'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# --- functions ---
+mkcd() { mkdir -p -- "$1" && cd -- "$1"; }
+
+export EDITOR=micro
+export PATH="$HOME/.local/bin:$PATH"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+eval "$(mise activate zsh)"

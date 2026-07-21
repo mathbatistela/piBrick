@@ -1,0 +1,12 @@
+# ~/.config/yazi/yazi.toml: managed by piBrick's ansible dotfiles role.
+# Edit dotfiles/yazi/yazi.toml in the repo, not this file directly.
+
+[mgr]
+sort_by = "mtime"
+sort_reverse = true
+sort_dir_first = true
+
+[opener]
+edit = [
+	{ run = 'micro "$@"', block = true, desc = "Edit with micro" },
+]

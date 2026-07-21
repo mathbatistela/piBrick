@@ -372,6 +372,9 @@ binds {
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
 
+    // CPU fan control popup (pibrickFan DMS plugin, see docs/setup/fan-control.md)
+    Mod+S hotkey-overlay-title="CPU Fan Control" { spawn "dms" "ipc" "call" "widget" "toggle" "pibrickFan"; }
+
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
     // For example, this is a standard bind to toggle the screen reader (orca).

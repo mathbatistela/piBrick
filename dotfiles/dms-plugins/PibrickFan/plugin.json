@@ -1,0 +1,14 @@
+{
+    "id": "pibrickFan",
+    "name": "piBrick Fan Control",
+    "description": "Monitor and manually override the CPU fan (kernel-automatic by default) via pibrick-fan",
+    "version": "1.0.0",
+    "author": "mathbatistela",
+    "type": "widget",
+    "capabilities": ["dankbar-widget", "control-center", "monitoring"],
+    "component": "./PibrickFanWidget.qml",
+    "icon": "mode_fan",
+    "startupCheck": "./StartupCheck.qml",
+    "dependencies": ["pibrick-fan"],
+    "permissions": ["process"]
+}

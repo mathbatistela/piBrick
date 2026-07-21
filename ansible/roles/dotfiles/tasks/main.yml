@@ -11,6 +11,12 @@
 - name: Apply bash dotfiles
   ansible.builtin.include_tasks: bash.yml
 
+- name: Apply zsh dotfiles
+  ansible.builtin.include_tasks: zsh.yml
+
+- name: Apply yazi dotfiles
+  ansible.builtin.include_tasks: yazi.yml
+
 - name: Apply wayvnc dotfiles
   ansible.builtin.include_tasks: wayvnc.yml
 
@@ -25,3 +31,6 @@
 
 - name: Apply fan control dotfiles
   ansible.builtin.include_tasks: fan.yml
+
+- name: Apply DankMaterialShell plugins
+  ansible.builtin.include_tasks: dms-plugins.yml

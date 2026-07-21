@@ -1,7 +1,7 @@
 ---
 # Desktop-stack apt packages. Kernel-driver build deps (build-essential, linux-headers,
 # device-tree-compiler, gpiod, evemu-tools, wlr-randr) are installed by pibrick-driver's own
-# install.sh and intentionally NOT duplicated here — see hardware/overview.md.
+# install.sh and intentionally NOT duplicated here — see docs/hardware/overview.md.
 - name: Install desktop-stack packages
   become: true
   ansible.builtin.apt:
@@ -12,7 +12,18 @@
       - qt6ct
       - squeekboard
       - wayvnc
+      - micro
       - mpv
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
+      - fzf
+      - zoxide
+      - atuin
+      - starship
+      - eza
+      - bat
+      - fd-find
     state: present
     update_cache: true
     cache_valid_time: 3600
@@ -57,3 +68,10 @@
   ansible.builtin.apt:
     name: mise
     state: present
+
+# yazi (terminal file manager) isn't in Debian's repos either, and it's a large Rust project not
+# worth building from source on-device — mise's aqua backend downloads the upstream prebuilt binary.
+- name: Install yazi via mise
+  ansible.builtin.command: mise use --global yazi
+  register: mise_yazi
+  changed_when: "'install' in mise_yazi.stdout"
