@@ -2,3 +2,4 @@
 .vault_pass
 *.pem
 .DS_Store
+/.reference/

@@ -145,6 +145,36 @@ anything under `button/` in this checkout, both `/usr/lib/pibrick/button/` and, 
 `/etc/pibrick/` need the same files copied over by hand before `systemctl restart pibrick.service` will
 actually pick up the change.
 
+## Notes for future driver work
+
+Cross-cutting findings that aren't tied to one specific bug — append here rather than
+re-discovering next time.
+
+**Local reference clones**: `scripts/sync-reference-repos.sh` (run from anywhere in this repo)
+clones `lshaf/pibrick-driver` and `amarullz/pibrick_pocketcm5_keyboard` into `.reference/` —
+untracked, gitignored, plain read-only source lookup (not built or installed from). Lets you grep
+the actual driver/firmware source locally instead of one-off GitHub fetches. Separate from the
+device's own checkouts under `~/pi_brick/` (see `docs/agents/access.md`) — this is for whichever
+machine you're actually working from. Fine to run proactively: read-only local clone, falls under
+the "fine to do proactively" bucket in `docs/agents/scope-and-safety.md`.
+
+**Scope boundary — what this repo does *not* cover**: NVMe/PCIe, USB, HDMI, etc. aren't
+`pibrick-driver`'s concern — they're mainline Linux kernel, driven straight off the CM5's own
+PCIe/USB controllers. This repo only owns display panel, touchscreen, battery charger, and side
+buttons (see "Install flow" above). Concrete example: the M.2 NVMe slot's `PCIE_PWR_EN` signal
+traces to a **native pin on the CM5 module itself** (confirmed on page 1 of
+[`../schematics/pocket-cm5-mainboard.pdf`](../schematics/pocket-cm5-mainboard.pdf), cross-referenced
+against the M.2 connector on page 5) — not a piBrick-added GPIO hack, so no custom driver work is
+needed there. Before assuming some new piece of hardware needs a driver in this repo, check whether
+it's actually just standard CM5/Pi5 peripheral support first.
+
+**Method note — tracing a signal through the schematic**: `pdftotext -f <page> -l <page> -layout
+<file> - | grep <net-or-pin-name>` against the PDFs in
+[`../schematics/`](../schematics/README.md), repeated across pages, follows a net/pin from a
+connector back to whatever drives it (a CM5 pin, a regulator, a GPIO). That's how the
+`PCIE_PWR_EN` finding above was established — reusable next time a new peripheral's wiring needs
+tracing before deciding whether it needs a kernel driver.
+
 ## Repo layout
 
 | Path | Purpose |
