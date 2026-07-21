@@ -11,9 +11,14 @@ The repo root is just a pointer README; everything lives under `Pocket-CM5/` (th
 published so far — the repo is structured to hold more than one piBrick product eventually, per its
 own README: "piBrick is Open Source Hardware project(s)").
 
-**Not in the repo**: the PCB/schematic itself — those live externally on
-[OSHWLab](https://oshwlab.com/amarullz/pibrick-pocketcm5) (EasyEDA Pro), linked from the README but not
-vendored as files here. This repo only carries the mechanical/case design and product collateral.
+**Not in the repo** (upstream, that is): the PCB/schematic itself lives externally on
+[OSHWLab](https://oshwlab.com/amarullz/pibrick-pocketcm5) (EasyEDA Pro), linked from the README —
+upstream doesn't vendor it as files, only the mechanical/case design and product collateral. This
+admin repo, however, *does* keep a manually-exported PDF snapshot of the schematic under
+[`docs/hardware/schematics/`](schematics/README.md) — a deliberate, narrow exception (same shape as
+the `dms-patches/` exception in `docs/agents/scope-and-safety.md`), added because OSHWLab's JS
+canvas editor can't be fetched or grepped for electrical detail. OSHWLab remains the source of
+truth for anything newer than that snapshot.
 
 | Path | Contents |
 |---|---|
@@ -39,3 +44,7 @@ Same as `pibrick-driver` and the keyboard firmware: this is a reference, not som
 vendors, builds, or automates. If you're touching the physical case (ordering a print, picking a
 variant), `Pocket-CM5/3d/` on the device (or the upstream repo directly) is the source of truth, not
 anything here.
+
+**Exception**: [`docs/hardware/schematics/`](schematics/README.md) does vendor a PDF export of the
+schematic itself, checked in directly to this repo rather than just linked — see that directory's
+README for what's covered and why.

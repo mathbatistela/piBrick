@@ -14,7 +14,8 @@ the upstream docs alone.
   user buttons
 - Battery: 5000 mAh LiPo
 - Audio: internal speaker + amp, mic (via the BBQ20 keyboard), 3.5mm jack
-- Accelerometer, front MIPI/CSI camera, M.2 NVMe, internal eMMC/microSD
+- Accelerometer, front MIPI/CSI camera, M.2 NVMe (2230/2242, PCIe 2/3 x1 — electrical detail in
+  [`schematics/README.md`](schematics/README.md)), internal eMMC/microSD
 
 ## Where the driver code lives
 
