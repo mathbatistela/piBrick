@@ -388,6 +388,13 @@ binds {
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
+    // piBrick: side rotary encoder (wheel) doubles as volume control when held
+    // with Alt, since plain wheel ticks are already used natively for
+    // scrollable-tiling column/workspace navigation. Same command DMS itself
+    // uses for its XF86Audio binds, so the OSD/bar slider stay in sync.
+    Alt+WheelScrollUp   cooldown-ms=150 { spawn "dms" "ipc" "call" "audio" "increment" "3"; }
+    Alt+WheelScrollDown cooldown-ms=150 { spawn "dms" "ipc" "call" "audio" "decrement" "3"; }
+
     // Example media keys mapping using playerctl.
     // This will work with any MPRIS-enabled media player.
     XF86AudioPlay        allow-when-locked=true { spawn-sh "playerctl play-pause"; }
